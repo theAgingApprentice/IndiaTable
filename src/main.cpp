@@ -6,21 +6,140 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <PubSubClient.h>
 #include "secrets.h"
 
 // Built-in LED pin (usually GPIO2 on ESP32 dev boards)
 #define LED_BUILTIN 2
 
+// MQTT topics
+#define TOPIC_CMD "christmasTree-cmd"
+#define TOPIC_MSG "christmasTree-msg"
+#define TOPIC_LOG "christmasTree-log"
+
 // Timer for LED blinking
 hw_timer_t *ledTimer = NULL;
 volatile bool ledState = false;
+volatile bool mqttConnected = false;
+
+// MQTT client
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);
+String mqttClientId = "";
+
+/**
+ * @brief Log message to both Serial console and MQTT broker
+ * @param message Message to log
+ */
+void logMessage(const String& message) {
+  // Always print to serial
+  Serial.println(message);
+  
+  // Also publish to MQTT if connected
+  if (mqttConnected && mqttClient.connected()) {
+    String prefixedMsg = mqttClientId + ": " + message;
+    mqttClient.publish(TOPIC_LOG, prefixedMsg.c_str());
+  }
+}
+
+/**
+ * @brief Log formatted message to both Serial console and MQTT broker
+ * @param format Printf-style format string
+ */
+void logMessageF(const char* format, ...) {
+  char buffer[256];
+  va_list args;
+  va_start(args, format);
+  vsnprintf(buffer, sizeof(buffer), format, args);
+  va_end(args);
+  
+  // Print to serial
+  Serial.println(buffer);
+  
+  // Also publish to MQTT if connected
+  if (mqttConnected && mqttClient.connected()) {
+    String prefixedMsg = mqttClientId + ": " + String(buffer);
+    mqttClient.publish(TOPIC_LOG, prefixedMsg.c_str());
+  }
+}
 
 /**
  * @brief Timer interrupt handler for LED blinking
  */
 void IRAM_ATTR onLedTimer() {
-  ledState = !ledState;
-  digitalWrite(LED_BUILTIN, ledState ? HIGH : LOW);
+  if (mqttConnected) {
+    // Solid on when MQTT connected
+    digitalWrite(LED_BUILTIN, HIGH);
+  } else {
+    // Slow blink when WiFi connected but MQTT not connected
+    ledState = !ledState;
+    digitalWrite(LED_BUILTIN, ledState ? HIGH : LOW);
+  }
+}
+
+/**
+ * @brief MQTT callback for incoming messages
+ */
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  String message = "";
+  for (unsigned int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+  
+  logMessageF("[MQTT] Message received on topic: %s", topic);
+  logMessageF("[MQTT] Payload: %s", message.c_str());
+  
+  // Process commands here
+  if (String(topic) == TOPIC_CMD) {
+    logMessageF("[MQTT] Processing command: %s", message.c_str());
+    // Add your command processing logic here
+  }
+}
+
+/**
+ * @brief Connect to MQTT broker
+ */
+bool connectToMQTT() {
+  Serial.println("\n[MQTT] Attempting connection to broker...");
+  Serial.printf("[MQTT] Broker: %s:%d\n", MQTT_BROKER, MQTT_PORT);
+  
+  // Generate unique client ID
+  mqttClientId = "ESP32-ChristmasTree-";
+  mqttClientId += String(WiFi.macAddress());
+  
+  Serial.printf("[MQTT] Client ID: %s\n", mqttClientId.c_str());
+  
+  if (mqttClient.connect(mqttClientId.c_str())) {
+    mqttConnected = true;  // Set this first so logMessage works
+    
+    logMessage("[MQTT] ✓ Connection successful!");
+    
+    // Subscribe to command topic
+    logMessageF("[MQTT] Subscribing to topic: %s", TOPIC_CMD);
+    if (mqttClient.subscribe(TOPIC_CMD)) {
+      logMessage("[MQTT] ✓ Subscription successful!");
+    } else {
+      logMessage("[MQTT] ✗ Subscription failed!");
+    }
+    
+    // Publish connection message
+    String connectMsg = "Christmas Tree Device Connected - MAC: " + WiFi.macAddress();
+    logMessageF("[MQTT] Publishing to topic: %s", TOPIC_MSG);
+    if (mqttClient.publish(TOPIC_MSG, connectMsg.c_str())) {
+      logMessage("[MQTT] ✓ Connection message published!");
+    } else {
+      logMessage("[MQTT] ✗ Failed to publish connection message!");
+    }
+    
+    logMessage("[MQTT] LED set to SOLID (MQTT connected)");
+    logMessage("[MQTT] Console messages now mirrored to MQTT topic: christmasTree-log");
+    return true;
+  } else {
+    Serial.printf("[MQTT] ✗ Connection failed! State: %d\n", mqttClient.state());
+    mqttConnected = false;
+    Serial.println("[MQTT] LED set to SLOW BLINK (MQTT disconnected)");
+    return false;
+  }
 }
 
 /**
@@ -145,8 +264,16 @@ void setup() {
   
   // Attempt to connect to WiFi
   if (connectToStrongestKnownNetwork()) {
-    // Connection successful - start LED blinking timer
-    Serial.println("[System] Starting status LED (solid green blink)...");
+    // WiFi connection successful - now setup MQTT
+    Serial.println("[System] Configuring MQTT client...");
+    mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+    mqttClient.setCallback(mqttCallback);
+    
+    // Attempt MQTT connection
+    connectToMQTT();
+    
+    // Start LED status timer
+    Serial.println("[System] Starting status LED timer...");
     
     // Configure timer: timer 0, prescaler 80 (1MHz), count up
     ledTimer = timerBegin(0, 80, true);
@@ -154,13 +281,17 @@ void setup() {
     // Attach interrupt handler
     timerAttachInterrupt(ledTimer, &onLedTimer, true);
     
-    // Set timer to trigger every 500ms (500000 microseconds) for blinking
-    timerAlarmWrite(ledTimer, 500000, true);
+    // Set timer to trigger every 1000ms (1000000 microseconds) for slow blink
+    timerAlarmWrite(ledTimer, 1000000, true);
     
     // Enable the timer
     timerAlarmEnable(ledTimer);
     
-    Serial.println("[System] Status LED active - indicating connected state");
+    if (mqttConnected) {
+      Serial.println("[System] Status LED: SOLID (WiFi + MQTT connected)");
+    } else {
+      Serial.println("[System] Status LED: SLOW BLINK (WiFi only, MQTT disconnected)");
+    }
   } else {
     Serial.println("[System] WiFi connection failed - LED remains off");
   }
@@ -169,7 +300,34 @@ void setup() {
 }
 
 void loop() {
-  // Main loop can remain empty or handle other tasks
-  // LED is controlled by timer interrupt
-  delay(1000);
+  // Maintain MQTT connection
+  if (WiFi.status() == WL_CONNECTED) {
+    if (!mqttClient.connected()) {
+      static bool loggedDisconnect = false;
+      if (!loggedDisconnect) {
+        // Only log once when connection is lost
+        Serial.println("[MQTT] Connection lost. Attempting to reconnect...");
+        loggedDisconnect = true;
+      }
+      mqttConnected = false;
+      
+      // Attempt to reconnect every 5 seconds
+      static unsigned long lastReconnectAttempt = 0;
+      unsigned long now = millis();
+      if (now - lastReconnectAttempt > 5000) {
+        lastReconnectAttempt = now;
+        if (connectToMQTT()) {
+          loggedDisconnect = false;
+        }
+      }
+    } else {
+      // Process MQTT messages
+      mqttClient.loop();
+    }
+  } else {
+    logMessage("[WiFi] Connection lost! Attempting to reconnect...");
+    connectToStrongestKnownNetwork();
+  }
+  
+  delay(100);
 }

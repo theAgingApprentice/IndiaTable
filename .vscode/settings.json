@@ -1,0 +1,10 @@
+{
+    "vsmqtt.brokerProfiles": [
+        {
+            "name": "PiBroker",
+            "host": "192.168.2.21",
+            "port": 1883,
+            "clientId": "vsmqtt_client_d30f"
+        }
+    ]
+}
