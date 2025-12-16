@@ -7,10 +7,14 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoOTA.h>
 #include "secrets.h"
 
 // Built-in LED pin (usually GPIO2 on ESP32 dev boards)
 #define LED_BUILTIN 2
+
+// Firmware version
+#define FIRMWARE_VERSION "1.0.0"
 
 // MQTT topics
 #define TOPIC_CMD "christmasTree-cmd"
@@ -123,7 +127,7 @@ bool connectToMQTT() {
     }
     
     // Publish connection message
-    String connectMsg = "Christmas Tree Device Connected - MAC: " + WiFi.macAddress();
+    String connectMsg = mqttClientId + ": [MQTT] Christmas Tree Device Connected - MAC: " + WiFi.macAddress();
     logMessageF("[MQTT] Publishing to topic: %s", TOPIC_MSG);
     if (mqttClient.publish(TOPIC_MSG, connectMsg.c_str())) {
       logMessage("[MQTT] ✓ Connection message published!");
@@ -140,6 +144,68 @@ bool connectToMQTT() {
     Serial.println("[MQTT] LED set to SLOW BLINK (MQTT disconnected)");
     return false;
   }
+}
+
+/**
+ * @brief Setup and configure OTA (Over-The-Air) updates
+ */
+void setupOTA() {
+  Serial.println();  // Add blank line to console
+  logMessage("[OTA] Configuring Over-The-Air updates...");
+  
+  // Set OTA hostname
+  String hostname = "ChristmasTree-" + WiFi.macAddress();
+  hostname.replace(":", "");
+  ArduinoOTA.setHostname(hostname.c_str());
+  logMessageF("[OTA] Hostname: %s", hostname.c_str());
+  
+  // Set OTA password for security
+  ArduinoOTA.setPassword(OTA_PASSWORD);
+  logMessage("[OTA] Password protection enabled");
+  
+  // Configure OTA callbacks
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else {  // U_SPIFFS
+      type = "filesystem";
+    }
+    logMessageF("[OTA] Update started: %s", type.c_str());
+  });
+  
+  ArduinoOTA.onEnd([]() {
+    logMessage("[OTA] Update completed successfully!");
+    logMessage("[OTA] Rebooting...");
+  });
+  
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    static unsigned int lastPercent = 0;
+    unsigned int percent = (progress / (total / 100));
+    if (percent != lastPercent && percent % 10 == 0) {
+      Serial.printf("[OTA] Progress: %u%%\n", percent);
+      lastPercent = percent;
+    }
+  });
+  
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("[OTA] Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      logMessage("Authentication Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      logMessage("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      logMessage("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      logMessage("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      logMessage("End Failed");
+    }
+  });
+  
+  ArduinoOTA.begin();
+  logMessage("[OTA] ✓ Ready for firmware updates");
+  logMessageF("[OTA] IP Address: %s", WiFi.localIP().toString().c_str());
 }
 
 /**
@@ -272,6 +338,9 @@ void setup() {
     // Attempt MQTT connection
     connectToMQTT();
     
+    // Setup OTA updates
+    setupOTA();
+    
     // Start LED status timer
     Serial.println("[System] Starting status LED timer...");
     
@@ -296,10 +365,14 @@ void setup() {
     Serial.println("[System] WiFi connection failed - LED remains off");
   }
   
-  Serial.println("\n[System] Setup complete!\n");
+  Serial.println();  // Add blank line to console
+  logMessageF("[System] Setup complete! Firmware v%s", FIRMWARE_VERSION);
 }
 
 void loop() {
+  // Handle OTA updates
+  ArduinoOTA.handle();
+  
   // Maintain MQTT connection
   if (WiFi.status() == WL_CONNECTED) {
     if (!mqttClient.connected()) {
