@@ -14,7 +14,7 @@
 #define LED_BUILTIN 2
 
 // Firmware version
-#define FIRMWARE_VERSION "1.0.0"
+#define FIRMWARE_VERSION "1.0.1"
 
 // MQTT topics
 #define TOPIC_CMD "christmasTree-cmd"
