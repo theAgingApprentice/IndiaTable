@@ -229,6 +229,8 @@ This project supports two firmware upload methods configured in `platformio.ini`
 - **Serial Upload** (`esp32dev`) - For new devices or when OTA is unavailable
 - **OTA Upload** (`esp32dev-ota`) - For wirelessly updating existing devices
 
+Each environment is independent, allowing you to choose the upload method at compile time without errors or conflicts.
+
 ##### Serial Upload (New Devices)
 
 Use this method for brand new ESP32 devices or when OTA is not available.
@@ -257,20 +259,17 @@ monitor_port = /dev/cu.usbserial-0265D23D
 
 **Command Line:**
 ```bash
-# Build and upload to serial port
-platformio run --target upload --environment esp32dev
+# Build and upload to serial port (specifying environment)
+platformio run -e esp32dev -t upload
 
 # Or shorter version
-pio run -t upload -e esp32dev
+pio run -e esp32dev -t upload
 
 # Monitor serial output
 pio device monitor
 ```
 
-**Important:** The `esp32dev` environment is the default, so you can omit `--environment esp32dev` for serial uploads:
-```bash
-pio run -t upload
-```
+**Important:** Always specify the environment (`-e esp32dev` or `-e esp32dev-ota`) to avoid building both environments and getting false errors.
 
 ##### OTA Upload (Existing Devices)
 
@@ -282,7 +281,7 @@ Use this method for wirelessly updating ESP32 devices that are already running t
 upload_protocol = espota
 upload_flags = 
     --auth=ChristmasTree2025!
-upload_port = 192.168.2.159  ; Change to your device's IP address
+upload_port = 192.168.1.xxx  ; Placeholder - use script or update manually
 ```
 
 **Prerequisites:**
@@ -294,63 +293,78 @@ upload_port = 192.168.2.159  ; Change to your device's IP address
 
 1. Find your device's IP address from:
    - Serial monitor output during startup
-   - MQTT log messages
+   - MQTT log messages (`christmasTree-log` topic)
    - Your router's DHCP client list
 
-2. Update `upload_port` in the `[env:esp32dev-ota]` section with your device's IP
-
-3. Upload using one of these methods:
+2. Use the OTA update script (recommended method):
 
 **Using the OTA Script (Recommended):**
 ```bash
+# Make script executable (first time only)
+chmod +x ota-update.sh
+
+# Upload to device at specified IP
 ./ota-update.sh 192.168.2.159
 ```
 
-**VS Code:**
-- Click PlatformIO icon → PROJECT TASKS → esp32dev-ota → Upload
+The script will:
+- Validate the IP address format
+- Build and upload only the OTA environment (no false errors)
+- Display upload progress
+- Show success/failure with clear messages
 
-**Command Line:**
+**VS Code (Alternative):**
+1. Update `upload_port` in the `[env:esp32dev-ota]` section with your device's IP
+2. Click PlatformIO icon → PROJECT TASKS → esp32dev-ota → Upload
+
+**Command Line (Alternative):**
 ```bash
-# Build and upload via OTA
-platformio run --target upload --environment esp32dev-ota
+# Build and upload via OTA to specific IP
+pio run -e esp32dev-ota -t upload --upload-port 192.168.2.159
 
-# Or shorter version
-pio run -t upload -e esp32dev-ota
+# Or use the configured IP in platformio.ini
+pio run -e esp32dev-ota -t upload
 ```
 
 **OTA Upload Process:**
 1. Firmware compiles
 2. Connects to device over WiFi
-3. Authenticates with password
+3. Authenticates with password (`ChristmasTree2025!`)
 4. Uploads new firmware
 5. Device automatically reboots with new firmware
 
 **Troubleshooting OTA:**
 - Ensure device is powered on and connected to WiFi
-- Verify IP address is correct
+- Verify IP address is correct (check MQTT logs or serial output)
 - Check that both computer and ESP32 are on same network
-- Confirm firewall isn't blocking port 3232
+- Confirm firewall isn't blocking port 3232 (ESP-OTA default)
 - Try serial upload if OTA continues to fail
 
 ##### Switching Between Upload Methods
 
-The project is configured with two environments to easily switch between methods:
+The project is configured with two independent environments. Always specify which one to use:
 
-| Environment | Method | Use Case |
-|-------------|--------|----------|
-| `esp32dev` | Serial (USB) | New devices, OTA unavailable |
-| `esp32dev-ota` | OTA (WiFi) | Existing devices, wireless updates |
+| Environment | Method | Use Case | Command |
+|-------------|--------|----------|---------|
+| `esp32dev` | Serial (USB) | New devices, OTA unavailable | `pio run -e esp32dev -t upload` |
+| `esp32dev-ota` | OTA (WiFi) | Existing devices, wireless updates | `./ota-update.sh <IP>` |
+
+**Why Specify the Environment?**
+- Running `pio run -t upload` without `-e` will attempt to build **both** environments
+- The non-connected environment will fail, showing confusing error messages
+- Specifying `-e esp32dev` or `-e esp32dev-ota` ensures only one builds and uploads
+- The OTA script automatically specifies `-e esp32dev-ota` for clean, error-free updates
 
 **Quick Reference:**
 ```bash
-# Serial upload (default)
-pio run -t upload
+# Serial upload (USB connected)
+pio run -e esp32dev -t upload
 
-# OTA upload (specify environment)
-pio run -t upload -e esp32dev-ota
+# OTA upload (WiFi) - using script
+./ota-update.sh 192.168.2.159
 
-# Or use the helper script
-./ota-update.sh <IP_ADDRESS>
+# OTA upload (WiFi) - manual command line
+pio run -e esp32dev-ota -t upload --upload-port 192.168.2.159
 ```
 
 ### Updating Your Clone

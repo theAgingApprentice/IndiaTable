@@ -70,8 +70,8 @@ echo ""
 echo "Starting OTA update..."
 echo ""
 
-# Perform the OTA update
-platformio run -t upload --upload-port "$IP_ADDRESS"
+# Perform the OTA update (only build and upload the OTA environment)
+platformio run -e esp32dev-ota -t upload --upload-port "$IP_ADDRESS"
 
 # Check the exit status
 if [ $? -eq 0 ]; then
