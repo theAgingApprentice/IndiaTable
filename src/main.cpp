@@ -28,7 +28,7 @@
 CRGB leds[NUM_LEDS];
 
 // Firmware version
-#define FIRMWARE_VERSION "6.0.0"
+#define FIRMWARE_VERSION "7.0.0"
 
 // MQTT topics
 #define TOPIC_CMD "christmasTree-cmd"
@@ -163,18 +163,40 @@ void logMessageF(const char* format, ...) {
 }
 
 /**
+ * @brief Clear all effect flags and LED strip
+ * This ensures clean state transitions when switching between effects
+ */
+void clearAllEffects() {
+  blinkEnabled = false;
+  twinkleEnabled = false;
+  vegasEnabled = false;
+  valentinesEnabled = false;
+  stPatricksEnabled = false;
+  halloweenEnabled = false;
+  christmasEnabled = false;
+  birthdayEnabled = false;
+  wildChristmasEnabled = false;
+  rainbowEnabled = false;
+  mayThe4thEnabled = false;
+  canadaDayEnabled = false;
+  
+  // Clear the LED strip to prevent artifacts
+  FastLED.clear();
+  FastLED.show();
+}
+
+/**
  * @brief Turn off all LEDs in the strip
  */
 void turnOffAllLEDs() {
-  FastLED.clear();
-  FastLED.show();
+  clearAllEffects();
 }
 
 /**
  * @brief Set all LEDs to red
  */
 void allRed() {
-  blinkEnabled = false;  // Disable blinking
+  clearAllEffects();
   
   // Use fill_solid for better performance
   fill_solid(leds, NUM_LEDS, CRGB::Red);
@@ -190,7 +212,7 @@ void allRed() {
  * @brief Set all LEDs to green
  */
 void allGreen() {
-  blinkEnabled = false;  // Disable blinking
+  clearAllEffects();
   
   fill_solid(leds, NUM_LEDS, CRGB::Green);
   
@@ -205,7 +227,7 @@ void allGreen() {
  * @brief Set all LEDs to white
  */
 void allWhite() {
-  blinkEnabled = false;  // Disable blinking
+  clearAllEffects();
   
   fill_solid(leds, NUM_LEDS, CRGB::White);
   
@@ -220,7 +242,7 @@ void allWhite() {
  * @brief Set all LEDs to blue
  */
 void allBlue() {
-  blinkEnabled = false;  // Disable blinking
+  clearAllEffects();
   
   fill_solid(leds, NUM_LEDS, CRGB::Blue);
   
@@ -235,6 +257,7 @@ void allBlue() {
  * @brief Enable red blinking on all LEDs
  */
 void allRedBlink() {
+  clearAllEffects();
   blinkEnabled = true;
   blinkState = false;
   blinkColor = CRGB::Red;
@@ -246,6 +269,7 @@ void allRedBlink() {
  * @brief Enable green blinking on all LEDs
  */
 void allGreenBlink() {
+  clearAllEffects();
   blinkEnabled = true;
   blinkState = false;
   blinkColor = CRGB::Green;
@@ -257,6 +281,7 @@ void allGreenBlink() {
  * @brief Enable white blinking on all LEDs
  */
 void allWhiteBlink() {
+  clearAllEffects();
   blinkEnabled = true;
   blinkState = false;
   blinkColor = CRGB::White;
@@ -268,6 +293,7 @@ void allWhiteBlink() {
  * @brief Enable blue blinking on all LEDs
  */
 void allBlueBlink() {
+  clearAllEffects();
   blinkEnabled = true;
   blinkState = false;
   blinkColor = CRGB::Blue;
@@ -279,7 +305,7 @@ void allBlueBlink() {
  * @brief Enable magical twinkle effect
  */
 void twinkle() {
-  blinkEnabled = false;  // Disable blinking
+  clearAllEffects();
   twinkleEnabled = true;
   lastTwinkleUpdate = millis();
   
@@ -294,8 +320,7 @@ void twinkle() {
  * @brief Enable wild Vegas effect - crazy colors and patterns
  */
 void vegas() {
-  blinkEnabled = false;     // Disable blinking
-  twinkleEnabled = false;   // Disable twinkle
+  clearAllEffects();
   vegasEnabled = true;
   lastVegasUpdate = millis();
   vegasHue = 0;
@@ -307,9 +332,7 @@ void vegas() {
  * @brief Enable romantic Valentines effect - pink and red love
  */
 void valentines() {
-  blinkEnabled = false;      // Disable blinking
-  twinkleEnabled = false;    // Disable twinkle
-  vegasEnabled = false;      // Disable vegas
+  clearAllEffects();
   valentinesEnabled = true;
   lastValentinesUpdate = millis();
   valentinesPhase = 0;
@@ -321,10 +344,7 @@ void valentines() {
  * @brief Enable St. Patrick's Day effect - Irish green and gold
  */
 void stPatricks() {
-  blinkEnabled = false;       // Disable blinking
-  twinkleEnabled = false;     // Disable twinkle
-  vegasEnabled = false;       // Disable vegas
-  valentinesEnabled = false;  // Disable valentines
+  clearAllEffects();
   stPatricksEnabled = true;
   lastStPatricksUpdate = millis();
   stPatricksPhase = 0;
@@ -336,11 +356,7 @@ void stPatricks() {
  * @brief Enable Halloween effect - spooky orange, purple, and green
  */
 void halloween() {
-  blinkEnabled = false;        // Disable blinking
-  twinkleEnabled = false;      // Disable twinkle
-  vegasEnabled = false;        // Disable vegas
-  valentinesEnabled = false;   // Disable valentines
-  stPatricksEnabled = false;   // Disable stPatricks
+  clearAllEffects();
   halloweenEnabled = true;
   lastHalloweenUpdate = millis();
   halloweenPhase = 0;
@@ -352,12 +368,7 @@ void halloween() {
  * @brief Enable Christmas effect - festive red, green, white, and gold
  */
 void christmas() {
-  blinkEnabled = false;        // Disable blinking
-  twinkleEnabled = false;      // Disable twinkle
-  vegasEnabled = false;        // Disable vegas
-  valentinesEnabled = false;   // Disable valentines
-  stPatricksEnabled = false;   // Disable stPatricks
-  halloweenEnabled = false;    // Disable halloween
+  clearAllEffects();
   christmasEnabled = true;
   lastChristmasUpdate = millis();
   christmasPhase = 0;
@@ -369,13 +380,7 @@ void christmas() {
  * @brief Enable Birthday effect - colorful celebration with confetti and candles
  */
 void birthday() {
-  blinkEnabled = false;        // Disable blinking
-  twinkleEnabled = false;      // Disable twinkle
-  vegasEnabled = false;        // Disable vegas
-  valentinesEnabled = false;   // Disable valentines
-  stPatricksEnabled = false;   // Disable stPatricks
-  halloweenEnabled = false;    // Disable halloween
-  christmasEnabled = false;    // Disable christmas
+  clearAllEffects();
   birthdayEnabled = true;
   lastBirthdayUpdate = millis();
   birthdayPhase = 0;
@@ -387,14 +392,7 @@ void birthday() {
  * @brief Enable Wild Christmas effect - fast chaotic Christmas party mode
  */
 void wildChristmas() {
-  blinkEnabled = false;        // Disable blinking
-  twinkleEnabled = false;      // Disable twinkle
-  vegasEnabled = false;        // Disable vegas
-  valentinesEnabled = false;   // Disable valentines
-  stPatricksEnabled = false;   // Disable stPatricks
-  halloweenEnabled = false;    // Disable halloween
-  christmasEnabled = false;    // Disable christmas
-  birthdayEnabled = false;     // Disable birthday
+  clearAllEffects();
   wildChristmasEnabled = true;
   lastWildChristmasUpdate = millis();
   wildChristmasPhase = 0;
@@ -406,15 +404,7 @@ void wildChristmas() {
  * @brief Enable Rainbow effect - smooth spectrum animations
  */
 void rainbow() {
-  blinkEnabled = false;         // Disable blinking
-  twinkleEnabled = false;       // Disable twinkle
-  vegasEnabled = false;         // Disable vegas
-  valentinesEnabled = false;    // Disable valentines
-  stPatricksEnabled = false;    // Disable stPatricks
-  halloweenEnabled = false;     // Disable halloween
-  christmasEnabled = false;     // Disable christmas
-  birthdayEnabled = false;      // Disable birthday
-  wildChristmasEnabled = false; // Disable wildChristmas
+  clearAllEffects();
   rainbowEnabled = true;
   lastRainbowUpdate = millis();
   rainbowPhase = 0;
@@ -426,16 +416,7 @@ void rainbow() {
  * @brief Enable May The 4th effect - Star Wars themed animations
  */
 void mayThe4th() {
-  blinkEnabled = false;         // Disable blinking
-  twinkleEnabled = false;       // Disable twinkle
-  vegasEnabled = false;         // Disable vegas
-  valentinesEnabled = false;    // Disable valentines
-  stPatricksEnabled = false;    // Disable stPatricks
-  halloweenEnabled = false;     // Disable halloween
-  christmasEnabled = false;     // Disable christmas
-  birthdayEnabled = false;      // Disable birthday
-  wildChristmasEnabled = false; // Disable wildChristmas
-  rainbowEnabled = false;       // Disable rainbow
+  clearAllEffects();
   mayThe4thEnabled = true;
   lastMayThe4thUpdate = millis();
   mayThe4thPhase = 0;
@@ -447,17 +428,7 @@ void mayThe4th() {
  * @brief Enable Canada Day effect - red and white patriotic animations
  */
 void canadaDay() {
-  blinkEnabled = false;         // Disable blinking
-  twinkleEnabled = false;       // Disable twinkle
-  vegasEnabled = false;         // Disable vegas
-  valentinesEnabled = false;    // Disable valentines
-  stPatricksEnabled = false;    // Disable stPatricks
-  halloweenEnabled = false;     // Disable halloween
-  christmasEnabled = false;     // Disable christmas
-  birthdayEnabled = false;      // Disable birthday
-  wildChristmasEnabled = false; // Disable wildChristmas
-  rainbowEnabled = false;       // Disable rainbow
-  mayThe4thEnabled = false;     // Disable mayThe4th
+  clearAllEffects();
   canadaDayEnabled = true;
   lastCanadaDayUpdate = millis();
   canadaDayPhase = 0;
@@ -521,27 +492,16 @@ void showHelp() {
 }
 
 /**
+ * @brief Clear all LED effects - helper function for clean state transitions
+ */
+/**
  * @brief Show connection status on first two LEDs
  * LED 0: Green = WiFi connected, Red = WiFi disconnected
  * LED 1: Green = MQTT connected, Red = MQTT disconnected
  */
 void showStatus() {
   // Disable all effects first
-  blinkEnabled = false;
-  twinkleEnabled = false;
-  vegasEnabled = false;
-  valentinesEnabled = false;
-  stPatricksEnabled = false;
-  halloweenEnabled = false;
-  christmasEnabled = false;
-  birthdayEnabled = false;
-  wildChristmasEnabled = false;
-  rainbowEnabled = false;
-  mayThe4thEnabled = false;
-  canadaDayEnabled = false;
-  
-  // Clear all LEDs first
-  FastLED.clear();
+  clearAllEffects();
   
   // Check WiFi status and set LED 0
   if (WiFi.status() == WL_CONNECTED) {
