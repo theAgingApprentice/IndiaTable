@@ -960,7 +960,11 @@ void handleRoot() {
 <body>
     <div class="container">
         <h1>🎄 Christmas Tree LED Controller</h1>
-        <div class="subtitle">ESP32 with 900 WS2812B LEDs · Firmware v)" FIRMWARE_VERSION R"(</div>
+        <div class="subtitle">ESP32 with 900 WS2812B LEDs · Firmware v)rawliteral";
+  
+  html += FIRMWARE_VERSION;
+  
+  html += R"rawliteral(</div>
         
         <div id="response" class="status-bar"></div>
         
