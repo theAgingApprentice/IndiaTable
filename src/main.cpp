@@ -28,7 +28,7 @@
 CRGB leds[NUM_LEDS];
 
 // Firmware version
-#define FIRMWARE_VERSION "7.0.0"
+#define FIRMWARE_VERSION "8.0.0"
 
 // MQTT topics
 #define TOPIC_CMD "christmasTree-cmd"
@@ -52,6 +52,12 @@ bool twinkleEnabled = false;
 unsigned long lastTwinkleUpdate = 0;
 const int TWINKLE_UPDATE_INTERVAL = 50;  // Update every 50ms for smooth effect
 const int TWINKLE_LEDS_PER_UPDATE = 5;   // Number of LEDs to update each cycle
+
+// Twinkle Plus effect control (more aggressive)
+bool twinklePlusEnabled = false;
+unsigned long lastTwinklePlusUpdate = 0;
+const int TWINKLEPLUS_UPDATE_INTERVAL = 30;  // Faster updates for aggressive effect
+const int TWINKLEPLUS_LEDS_PER_UPDATE = 15;  // More LEDs per update
 
 // Vegas effect control
 bool vegasEnabled = false;
@@ -94,6 +100,17 @@ bool wildChristmasEnabled = false;
 unsigned long lastWildChristmasUpdate = 0;
 const int WILDCHRISTMAS_UPDATE_INTERVAL = 25;  // Fast chaotic timing
 uint8_t wildChristmasPhase = 0;                // Animation phase tracker
+
+// Christmas Basic effect control
+bool christmasBasicEnabled = false;
+unsigned long lastChristmasBasicUpdate = 0;
+const int CHRISTMASBASIC_UPDATE_INTERVAL = 50;  // Twinkle update timing
+
+// Christmas Train effect control
+bool christmasTrainEnabled = false;
+unsigned long lastChristmasTrainUpdate = 0;
+unsigned long christmasTrainSpeed = 100;        // Rotation speed in ms (adjustable)
+int christmasTrainOffset = 0;                   // Current rotation offset
 
 // Rainbow effect control
 bool rainbowEnabled = false;
@@ -169,6 +186,7 @@ void logMessageF(const char* format, ...) {
 void clearAllEffects() {
   blinkEnabled = false;
   twinkleEnabled = false;
+  twinklePlusEnabled = false;
   vegasEnabled = false;
   valentinesEnabled = false;
   stPatricksEnabled = false;
@@ -176,6 +194,8 @@ void clearAllEffects() {
   christmasEnabled = false;
   birthdayEnabled = false;
   wildChristmasEnabled = false;
+  christmasBasicEnabled = false;
+  christmasTrainEnabled = false;
   rainbowEnabled = false;
   mayThe4thEnabled = false;
   canadaDayEnabled = false;
@@ -317,6 +337,21 @@ void twinkle() {
 }
 
 /**
+ * @brief Enable aggressive twinkle+ effect - faster and more intense twinkling
+ */
+void twinklePlus() {
+  clearAllEffects();
+  twinklePlusEnabled = true;
+  lastTwinklePlusUpdate = millis();
+  
+  // Start with all LEDs off
+  FastLED.clear();
+  FastLED.show();
+  
+  Serial.println("[LED Strip] Twinkle+ effect enabled - aggressive magical mode!");
+}
+
+/**
  * @brief Enable wild Vegas effect - crazy colors and patterns
  */
 void vegas() {
@@ -401,6 +436,81 @@ void wildChristmas() {
 }
 
 /**
+ * @brief Enable Christmas Basic effect - alternating red, green, white with twinkling
+ */
+void christmasBasic() {
+  clearAllEffects();
+  christmasBasicEnabled = true;
+  lastChristmasBasicUpdate = millis();
+  
+  // Set initial pattern - red, green, white repeating
+  for (int i = 0; i < NUM_LEDS; i++) {
+    int colorIndex = i % 3;
+    if (colorIndex == 0) {
+      leds[i] = CRGB::Red;
+    } else if (colorIndex == 1) {
+      leds[i] = CRGB::Green;
+    } else {
+      leds[i] = CRGB::White;
+    }
+  }
+  FastLED.show();
+  
+  Serial.println("[LED Strip] Christmas Basic mode enabled - red, green, white with twinkling!");
+}
+
+/**
+ * @brief Enable Christmas Train effect - rotating red, green, white pattern
+ */
+void christmasTrain() {
+  clearAllEffects();
+  christmasTrainEnabled = true;
+  lastChristmasTrainUpdate = millis();
+  christmasTrainOffset = 0;
+  
+  // Set initial pattern - red, green, white repeating
+  for (int i = 0; i < NUM_LEDS; i++) {
+    int colorIndex = i % 3;
+    if (colorIndex == 0) {
+      leds[i] = CRGB::Red;
+    } else if (colorIndex == 1) {
+      leds[i] = CRGB::Green;
+    } else {
+      leds[i] = CRGB::White;
+    }
+  }
+  FastLED.show();
+  
+  Serial.printf("[LED Strip] Christmas Train mode enabled - motion at %lu ms speed!\n", christmasTrainSpeed);
+}
+
+/**
+ * @brief Set the Christmas Train rotation speed
+ * @param speed Speed in milliseconds (50-1000ms)
+ */
+void setTrainSpeed(unsigned long speed) {
+  // Validate speed range
+  if (speed < 50) {
+    speed = 50;  // Minimum speed
+    logMessage("[LED Strip] Train speed set to minimum: 50ms");
+  } else if (speed > 1000) {
+    speed = 1000;  // Maximum speed
+    logMessage("[LED Strip] Train speed set to maximum: 1000ms");
+  }
+  
+  christmasTrainSpeed = speed;
+  
+  char msg[100];
+  snprintf(msg, sizeof(msg), "[LED Strip] Christmas Train speed set to %lu ms (lower=faster, higher=slower)", christmasTrainSpeed);
+  logMessage(msg);
+  
+  // If train effect is running, show immediate feedback
+  if (christmasTrainEnabled) {
+    logMessage("[LED Strip] Speed change will take effect immediately!");
+  }
+}
+
+/**
  * @brief Enable Rainbow effect - smooth spectrum animations
  */
 void rainbow() {
@@ -471,11 +581,14 @@ void showHelp() {
   logMessage("");
   logMessage("Special Effects:");
   logMessage("  twinkle    - Magical twinkling effect");
+  logMessage("  twinkle+   - Aggressive fast twinkling effect");
   logMessage("  vegas      - Wild and crazy Las Vegas mode!");
   logMessage("  valentines - Romantic pink and red love theme");
   logMessage("  stPatricks - Irish green and gold shamrock luck");
   logMessage("  halloween  - Spooky orange, purple, and green");
   logMessage("  christmas  - Festive red, green, white, and gold");
+  logMessage("  christmasBasic - Classic red, green, white with twinkling");
+  logMessage("  christmasTrain - Rotating red, green, white motion");
   logMessage("  birthday   - Colorful celebration with confetti and candles");
   logMessage("  wildChristmas - Fast chaotic Christmas party mode");
   logMessage("  rainbow    - Smooth spectrum animations");
@@ -483,8 +596,10 @@ void showHelp() {
   logMessage("  canadaDay  - Red and white patriotic Canadian celebration");
   logMessage("");
   logMessage("Configuration:");
-  logMessage("  setSpeed:<ms> - Set blink speed (50-5000ms)");
-  logMessage("                  Example: setSpeed:500");
+  logMessage("  setSpeed:<ms>      - Set blink speed (50-5000ms)");
+  logMessage("                       Example: setSpeed:500");
+  logMessage("  setTrainSpeed:<ms> - Set train rotation speed (50-1000ms)");
+  logMessage("                       Example: setTrainSpeed:150");
   logMessage("");
   logMessage("Information:");
   logMessage("  help - Show this help message");
@@ -596,6 +711,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     else if (message == "twinkle") {
       pendingCommand = "twinkle";
     }
+    else if (message == "twinkle+") {
+      pendingCommand = "twinkle+";
+    }
     else if (message == "vegas") {
       pendingCommand = "vegas";
     }
@@ -617,6 +735,12 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     else if (message == "wildChristmas") {
       pendingCommand = "wildChristmas";
     }
+    else if (message == "christmasBasic") {
+      pendingCommand = "christmasBasic";
+    }
+    else if (message == "christmasTrain") {
+      pendingCommand = "christmasTrain";
+    }
     else if (message == "rainbow") {
       pendingCommand = "rainbow";
     }
@@ -636,6 +760,18 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         pendingCommandParam = speed;
       } else {
         Serial.println("[MQTT] Invalid setSpeed format. Use 'setSpeed:500'");
+      }
+    }
+    else if (message.startsWith("setTrainSpeed:")) {
+      // Parse train speed value from "setTrainSpeed:150" format
+      int colonIndex = message.indexOf(':');
+      if (colonIndex != -1) {
+        unsigned long speed = message.substring(colonIndex + 1).toInt();
+        Serial.printf("[MQTT] Queuing setTrainSpeed command: %lu ms\n", speed);
+        pendingCommand = "setTrainSpeed";
+        pendingCommandParam = speed;
+      } else {
+        Serial.println("[MQTT] Invalid setTrainSpeed format. Use 'setTrainSpeed:150'");
       }
     }
     else {
@@ -824,7 +960,7 @@ void handleRoot() {
 <body>
     <div class="container">
         <h1>🎄 Christmas Tree LED Controller</h1>
-        <div class="subtitle">ESP32 with 900 WS2812B LEDs</div>
+        <div class="subtitle">ESP32 with 900 WS2812B LEDs · Firmware v)" FIRMWARE_VERSION R"(</div>
         
         <div id="response" class="status-bar"></div>
         
@@ -861,12 +997,20 @@ void handleRoot() {
                     <button class="btn-status" onclick="setSpeed()">Set Speed</button>
                 </div>
             </div>
+            <div class="speed-control">
+                <label>Train Speed (50-1000 ms):</label>
+                <div class="speed-input-group">
+                    <input type="number" id="trainSpeedValue" min="50" max="1000" value="100" placeholder="100">
+                    <button class="btn-status" onclick="setTrainSpeed()">Set Train Speed</button>
+                </div>
+            </div>
         </div>
         
         <div class="section">
             <h2>Special Effects</h2>
             <div class="button-grid">
                 <button class="btn-effect" onclick="sendCommand('twinkle')">Twinkle</button>
+                <button class="btn-effect" onclick="sendCommand('twinkle+')">Twinkle+</button>
                 <button class="btn-effect" onclick="sendCommand('vegas')">Vegas</button>
                 <button class="btn-effect" onclick="sendCommand('rainbow')">Rainbow</button>
             </div>
@@ -876,6 +1020,8 @@ void handleRoot() {
             <h2>Holiday Themes</h2>
             <div class="button-grid">
                 <button class="btn-holiday" onclick="sendCommand('christmas')">Christmas</button>
+                <button class="btn-holiday" onclick="sendCommand('christmasBasic')">Christmas Basic</button>
+                <button class="btn-holiday" onclick="sendCommand('christmasTrain')">Christmas Train</button>
                 <button class="btn-holiday" onclick="sendCommand('wildChristmas')">Wild Christmas</button>
                 <button class="btn-holiday" onclick="sendCommand('halloween')">Halloween</button>
                 <button class="btn-holiday" onclick="sendCommand('valentines')">Valentines</button>
@@ -908,6 +1054,15 @@ void handleRoot() {
                 return;
             }
             sendCommand('setSpeed:' + speed);
+        }
+        
+        function setTrainSpeed() {
+            const speed = document.getElementById('trainSpeedValue').value;
+            if (speed < 50 || speed > 1000) {
+                showResponse('Train speed must be between 50 and 1000 ms', 'error');
+                return;
+            }
+            sendCommand('setTrainSpeed:' + speed);
         }
         
         function showResponse(message, type) {
@@ -1243,6 +1398,9 @@ void loop() {
     else if (pendingCommand == "twinkle") {
       twinkle();
     }
+    else if (pendingCommand == "twinkle+") {
+      twinklePlus();
+    }
     else if (pendingCommand == "vegas") {
       vegas();
     }
@@ -1264,6 +1422,12 @@ void loop() {
     else if (pendingCommand == "wildChristmas") {
       wildChristmas();
     }
+    else if (pendingCommand == "christmasBasic") {
+      christmasBasic();
+    }
+    else if (pendingCommand == "christmasTrain") {
+      christmasTrain();
+    }
     else if (pendingCommand == "rainbow") {
       rainbow();
     }
@@ -1275,6 +1439,9 @@ void loop() {
     }
     else if (pendingCommand == "setSpeed") {
       setSpeed(pendingCommandParam);
+    }
+    else if (pendingCommand == "setTrainSpeed") {
+      setTrainSpeed(pendingCommandParam);
     }
     pendingCommand = "";  // Clear the command
     pendingCommandParam = 0;
@@ -1372,6 +1539,46 @@ void loop() {
       
       // Fade all LEDs slightly for smooth transitions
       fadeToBlackBy(leds, NUM_LEDS, 8);
+      
+      FastLED.show();
+    }
+  }
+  
+  // Handle twinkle+ effect - MORE AGGRESSIVE TWINKLING!
+  if (twinklePlusEnabled) {
+    unsigned long now = millis();
+    if (now - lastTwinklePlusUpdate >= TWINKLEPLUS_UPDATE_INTERVAL) {
+      lastTwinklePlusUpdate = now;
+      
+      // Update many random LEDs each cycle for intense, aggressive effect
+      for (int i = 0; i < TWINKLEPLUS_LEDS_PER_UPDATE; i++) {
+        int ledIndex = random16(NUM_LEDS);
+        
+        // Random decision: twinkle on, fade, or off (more aggressive probabilities)
+        int action = random8(100);
+        
+        if (action < 30) {
+          // 30% chance: Light up with bright white/golden color (increased from 15%)
+          int brightness = random8(150, 255);  // Brighter minimum
+          leds[ledIndex] = CRGB(brightness, brightness * 0.8, brightness * 0.3); // Warm golden
+        }
+        else if (action < 55) {
+          // 25% chance: Dim the LED dramatically (increased from 15%)
+          leds[ledIndex].fadeToBlackBy(100);  // More dramatic fade
+        }
+        else if (action < 70) {
+          // 15% chance: Turn off completely (increased from 10%)
+          leds[ledIndex] = CRGB::Black;
+        }
+        else if (action < 85) {
+          // 15% chance: Flash to maximum brightness (NEW!)
+          leds[ledIndex] = CRGB(255, 200, 80);  // Bright golden flash
+        }
+        // Only 15% chance: Do nothing (decreased from 60% for more activity)
+      }
+      
+      // More aggressive fade for faster transitions
+      fadeToBlackBy(leds, NUM_LEDS, 15);  // Increased from 8 for faster changes
       
       FastLED.show();
     }
@@ -1993,6 +2200,82 @@ void loop() {
             }
           }
           break;
+      }
+      
+      FastLED.show();
+    }
+  }
+  
+  // Handle Christmas Basic effect - Red, Green, White alternating with twinkling
+  if (christmasBasicEnabled) {
+    unsigned long now = millis();
+    if (now - lastChristmasBasicUpdate >= CHRISTMASBASIC_UPDATE_INTERVAL) {
+      lastChristmasBasicUpdate = now;
+      
+      // Update random LEDs for twinkling effect
+      for (int i = 0; i < 15; i++) {  // Update 15 random LEDs each cycle
+        int ledIndex = random16(NUM_LEDS);
+        
+        // Determine base color for this LED position
+        int colorIndex = ledIndex % 3;
+        CRGB baseColor;
+        if (colorIndex == 0) {
+          baseColor = CRGB::Red;
+        } else if (colorIndex == 1) {
+          baseColor = CRGB::Green;
+        } else {
+          baseColor = CRGB::White;
+        }
+        
+        // Random twinkle action
+        int action = random8(100);
+        
+        if (action < 20) {
+          // 20% chance: Brighten to full brightness (twinkle on)
+          leds[ledIndex] = baseColor;
+        }
+        else if (action < 40) {
+          // 20% chance: Dim the LED noticeably
+          leds[ledIndex] = baseColor;
+          leds[ledIndex].fadeToBlackBy(100);  // Dim to about 60% brightness
+        }
+        else if (action < 50) {
+          // 10% chance: Very dim (almost off but noticeable)
+          leds[ledIndex] = baseColor;
+          leds[ledIndex].fadeToBlackBy(200);  // Dim to about 22% brightness
+        }
+        // 50% chance: Do nothing - maintain current state for persistence
+      }
+      
+      // Gentle overall fade to create breathing/twinkling effect
+      fadeToBlackBy(leds, NUM_LEDS, 3);  // Very subtle fade
+      
+      FastLED.show();
+    }
+  }
+  
+  // Handle Christmas Train effect - Rotating red, green, white pattern
+  if (christmasTrainEnabled) {
+    unsigned long now = millis();
+    if (now - lastChristmasTrainUpdate >= christmasTrainSpeed) {
+      lastChristmasTrainUpdate = now;
+      
+      // Increment offset to create rotation effect
+      christmasTrainOffset++;
+      if (christmasTrainOffset >= 3) {
+        christmasTrainOffset = 0;  // Reset after full color cycle
+      }
+      
+      // Update all LEDs with rotated pattern
+      for (int i = 0; i < NUM_LEDS; i++) {
+        int colorIndex = (i + christmasTrainOffset) % 3;
+        if (colorIndex == 0) {
+          leds[i] = CRGB::Red;
+        } else if (colorIndex == 1) {
+          leds[i] = CRGB::Green;
+        } else {
+          leds[i] = CRGB::White;
+        }
       }
       
       FastLED.show();

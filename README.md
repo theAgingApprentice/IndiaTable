@@ -2,6 +2,54 @@
 
 Addressable WS2812B LED strip controller with 900 LEDs, WiFi connectivity, MQTT control, and Over-The-Air (OTA) firmware updates. Features multiple holiday-themed animations and solid color displays controlled via MQTT commands.
 
+## Table of Contents
+
+- [Hardware](#hardware)
+- [Features](#features)
+  - [WiFi Connectivity](#-wifi-connectivity)
+  - [MQTT Communication](#-mqtt-communication)
+  - [Security](#-security)
+  - [Over-The-Air (OTA) Updates](#-over-the-air-ota-updates)
+  - [LED Status Indicator](#-led-status-indicator-gpio2)
+  - [LED Control System](#-led-control-system)
+  - [Web Interface](#-web-interface)
+  - [Logging & Diagnostics](#-logging--diagnostics)
+- [Project Structure](#project-structure)
+- [Configuration](#configuration)
+  - [Secrets File](#secrets-file-includesecretsh)
+  - [PlatformIO Configuration](#platformio-configuration-platformioini)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Initial Setup](#initial-setup)
+  - [Updating Your Clone](#updating-your-clone)
+- [MQTT Configuration](#mqtt-configuration)
+  - [Topics](#topics)
+  - [Message Format](#message-format)
+  - [Testing MQTT](#testing-mqtt)
+- [How to Use](#how-to-use)
+  - [Web Interface Control](#web-interface-control)
+  - [MQTT Command Control](#mqtt-command-control)
+  - [Available Commands](#available-commands)
+  - [Usage Examples](#usage-examples)
+  - [Effect Behavior](#effect-behavior)
+- [MQTT Topics](#mqtt-topics)
+- [Development](#development)
+  - [Dependencies](#dependencies)
+  - [Building](#building)
+  - [Firmware Version](#firmware-version)
+- [Troubleshooting](#troubleshooting)
+  - [WiFi Connection Issues](#wifi-connection-issues)
+  - [MQTT Connection Issues](#mqtt-connection-issues)
+  - [LED Strip Issues](#led-strip-issues)
+  - [Command Not Working](#command-not-working)
+  - [Web Interface Not Loading](#web-interface-not-loading)
+  - [OTA Update Failures](#ota-update-failures)
+  - [Serial Upload Issues](#serial-upload-issues)
+- [Status Messages](#status-messages)
+- [Quick Reference Card](#quick-reference-card)
+- [Technical Specifications](#technical-specifications)
+- [License](#license)
+
 ## Hardware
 
 - **Board**: Freenove ESP32-WROOM-32 v1.3 Development Board
@@ -56,7 +104,7 @@ Visual feedback of system state:
 - **Power Management**: Maximum brightness limited to 80/255 with 3.5A current limiting
 - **Command Queue System**: Prevents watchdog timeouts during long animations
 - **Status Display**: LEDs 0-1 show WiFi and MQTT connection status (green=connected, red=disconnected)
-- **Multiple Effects**: 22+ commands including solid colors, blinking patterns, and themed animations
+- **Multiple Effects**: 25+ commands including solid colors, blinking patterns, themed animations, and motion effects
 
 ### 🌐 Web Interface
 - **Built-in Web Server**: HTTP server on port 80 for direct browser control
@@ -65,10 +113,11 @@ Visual feedback of system state:
 - **Modern UI**: Beautiful gradient backgrounds, smooth animations, and intuitive button layouts
 - **Real-time Feedback**: Instant command confirmation with color-coded status messages
 - **Zero Configuration**: Automatically starts when device boots - just open browser to IP address
-- **All Features**: Full access to all 22+ LED commands and effects from one convenient interface
+- **All Features**: Full access to all 25+ LED commands and effects from one convenient interface
 - **Easy Access**: Simply navigate to the ESP32's IP address (e.g., http://192.168.2.159)
 - **No Installation**: Works with any modern browser - Chrome, Firefox, Safari, Edge
 - **Organized Controls**: Grouped by function - Status, Colors, Blink, Effects, Holidays
+- **Speed Controls**: Adjustable blink speed (50-5000ms) and train rotation speed (50-1000ms)
 
 ### 📝 Logging & Diagnostics
 - **Comprehensive Console Output**: Detailed status messages for all operations
@@ -548,12 +597,26 @@ Send commands via MQTT to the `christmasTree-cmd` topic.
 #### Special Effects
 
 **Holiday & Celebration Effects:**
-- `twinkle` - Magical twinkling golden sparkles effect with 4 sub-patterns
+- `twinkle` - Magical twinkling golden sparkles effect with smooth, gentle animation
+- `twinkle+` - Aggressive fast twinkling effect with intense, rapid sparkles
+  - 3x more LEDs updated per cycle
+  - 40% faster update rate
+  - Higher chance of brightness changes
+  - More dramatic fade effects
 - `christmas` - Festive red, green, white, and gold animations
   - Classic red/green waves
   - Twinkling white snowfall
   - Candy cane stripes
   - Golden star shimmer
+- `christmasBasic` - Classic red, green, white alternating pattern with gentle twinkling
+  - Simple alternating color pattern (R-G-W repeating)
+  - Random subtle twinkle effects
+  - Perfect for traditional holiday displays
+- `christmasTrain` - Rotating red, green, white motion effect
+  - Creates illusion of moving train lights
+  - Smooth continuous rotation
+  - Speed adjustable with `setTrainSpeed` command
+  - Default speed: 100ms per rotation step
 - `wildChristmas` - Fast chaotic Christmas party mode
   - Crazy strobe (red/green/white flashes)
   - Lightning bolts
@@ -595,6 +658,13 @@ Send commands via MQTT to the `christmasTree-cmd` topic.
   - Range: 50ms to 5000ms
   - Example: `setSpeed:500` for half-second intervals
   - Example: `setSpeed:2000` for 2-second intervals
+- `setTrainSpeed:<milliseconds>` - Set rotation speed for Christmas Train effect
+  - Range: 50ms to 1000ms
+  - Lower values = faster rotation
+  - Higher values = slower rotation
+  - Example: `setTrainSpeed:50` for very fast motion
+  - Example: `setTrainSpeed:500` for slow, relaxed motion
+  - Works immediately while train effect is running
 
 ### Usage Examples
 
