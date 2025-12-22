@@ -104,7 +104,7 @@ Visual feedback of system state:
 - **Power Management**: Maximum brightness limited to 80/255 with 3.5A current limiting
 - **Command Queue System**: Prevents watchdog timeouts during long animations
 - **Status Display**: LEDs 0-1 show WiFi and MQTT connection status (green=connected, red=disconnected)
-- **Multiple Effects**: 25+ commands including solid colors, blinking patterns, themed animations, and motion effects
+- **Multiple Effects**: 28+ commands including solid colors, blinking patterns, themed animations, and motion effects
 
 ### 🌐 Web Interface
 - **Built-in Web Server**: HTTP server on port 80 for direct browser control
@@ -113,7 +113,7 @@ Visual feedback of system state:
 - **Modern UI**: Beautiful gradient backgrounds, smooth animations, and intuitive button layouts
 - **Real-time Feedback**: Instant command confirmation with color-coded status messages
 - **Zero Configuration**: Automatically starts when device boots - just open browser to IP address
-- **All Features**: Full access to all 25+ LED commands and effects from one convenient interface
+- **All Features**: Full access to all 28+ LED commands and effects from one convenient interface
 - **Easy Access**: Simply navigate to the ESP32's IP address (e.g., http://192.168.2.159)
 - **No Installation**: Works with any modern browser - Chrome, Firefox, Safari, Edge
 - **Organized Controls**: Grouped by function - Status, Colors, Blink, Effects, Holidays
@@ -603,11 +603,15 @@ Send commands via MQTT to the `christmasTree-cmd` topic.
   - 40% faster update rate
   - Higher chance of brightness changes
   - More dramatic fade effects
-- `christmas` - Festive red, green, white, and gold animations
-  - Classic red/green waves
-  - Twinkling white snowfall
-  - Candy cane stripes
-  - Golden star shimmer
+- `gold` - Shimmering gold twinkling effect
+  - All LEDs display elegant gold color
+  - Twinkling at same aggressive rate as twinkle+
+  - Multiple gold shades for depth and shimmer
+  - Perfect for elegant occasions and luxury displays
+- `christmas` - Classic red and green waves
+  - Flowing gradient pattern of festive red and green
+- `candyCane` - Red and white striped pattern
+  - Animated candy cane stripes rotating around the tree
 - `christmasBasic` - Classic red, green, white alternating pattern with gentle twinkling
   - Simple alternating color pattern (R-G-W repeating)
   - Random subtle twinkle effects
@@ -627,18 +631,21 @@ Send commands via MQTT to the `christmasTree-cmd` topic.
   - Witch's cauldron (purple/green)
   - Haunted house random colors
   - Ghostly apparitions
-- `valentines` - Romantic pink and red love theme with 4 patterns
+- `valentines` - Romantic pink and red love theme with gentle pulsing hearts
 - `stPatricks` - Irish green and gold shamrock luck with 4 patterns
-- `birthday` - Colorful celebration
-  - Confetti burst
-  - Rainbow waves
-  - Flickering birthday candles
-  - Party lights dance
+- `birthday` - Colorful celebration with confetti burst
+  - Random colorful rainbow sparkles
+  - Continuous confetti effect
 - `canadaDay` - Red and white patriotic Canadian celebration
   - Maple leaf stripes
   - Northern lights shimmer
   - Fireworks burst
   - Flag wave
+- `newYears` - Gold, silver, and colorful New Year's celebration
+  - Champagne bubbles rising (gold and silver sparkles)
+  - Countdown sparkle (alternating gold and silver waves)
+  - Fireworks burst (colorful explosions)
+  - Confetti celebration (rapid multicolor bursts)
 
 **Other Effects:**
 - `vegas` - Wild and crazy rainbow Las Vegas mode with 5 sub-patterns

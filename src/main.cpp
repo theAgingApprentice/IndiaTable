@@ -28,7 +28,7 @@
 CRGB leds[NUM_LEDS];
 
 // Firmware version
-#define FIRMWARE_VERSION "8.0.0"
+#define FIRMWARE_VERSION "8.0.4"
 
 // MQTT topics
 #define TOPIC_CMD "christmasTree-cmd"
@@ -58,6 +58,12 @@ bool twinklePlusEnabled = false;
 unsigned long lastTwinklePlusUpdate = 0;
 const int TWINKLEPLUS_UPDATE_INTERVAL = 30;  // Faster updates for aggressive effect
 const int TWINKLEPLUS_LEDS_PER_UPDATE = 15;  // More LEDs per update
+
+// Gold effect control
+bool goldEnabled = false;
+unsigned long lastGoldUpdate = 0;
+const int GOLD_UPDATE_INTERVAL = 30;  // Same as twinkle+ for matching twinkle rate
+const int GOLD_LEDS_PER_UPDATE = 15;  // Same as twinkle+
 
 // Vegas effect control
 bool vegasEnabled = false;
@@ -130,6 +136,18 @@ unsigned long lastCanadaDayUpdate = 0;
 const int CANADADAY_UPDATE_INTERVAL = 40;   // Proud Canadian timing
 uint8_t canadaDayPhase = 0;                 // Animation phase tracker
 
+// New Years effect control
+bool newYearsEnabled = false;
+unsigned long lastNewYearsUpdate = 0;
+const int NEWYEARS_UPDATE_INTERVAL = 35;    // Celebration timing
+uint8_t newYearsPhase = 0;                  // Animation phase tracker
+
+// Candy Cane effect control
+bool candyCaneEnabled = false;
+unsigned long lastCandyCaneUpdate = 0;
+const int CANDYCANE_UPDATE_INTERVAL = 40;   // Stripe animation timing
+uint8_t candyCanePhase = 0;                 // Animation phase tracker
+
 // Command queue to avoid watchdog issues in MQTT callback
 String pendingCommand = "";
 unsigned long pendingCommandParam = 0;
@@ -187,6 +205,7 @@ void clearAllEffects() {
   blinkEnabled = false;
   twinkleEnabled = false;
   twinklePlusEnabled = false;
+  goldEnabled = false;
   vegasEnabled = false;
   valentinesEnabled = false;
   stPatricksEnabled = false;
@@ -199,6 +218,8 @@ void clearAllEffects() {
   rainbowEnabled = false;
   mayThe4thEnabled = false;
   canadaDayEnabled = false;
+  newYearsEnabled = false;
+  candyCaneEnabled = false;
   
   // Clear the LED strip to prevent artifacts
   FastLED.clear();
@@ -349,6 +370,23 @@ void twinklePlus() {
   FastLED.show();
   
   Serial.println("[LED Strip] Twinkle+ effect enabled - aggressive magical mode!");
+}
+
+/**
+ * @brief Enable gold effect - golden LEDs with twinkling
+ */
+void gold() {
+  clearAllEffects();
+  goldEnabled = true;
+  lastGoldUpdate = millis();
+  
+  // Start with all LEDs as gold
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i] = CRGB(255, 180, 0);  // Gold color
+  }
+  FastLED.show();
+  
+  Serial.println("[LED Strip] Gold effect enabled - shimmering gold!");
 }
 
 /**
@@ -547,6 +585,30 @@ void canadaDay() {
 }
 
 /**
+ * @brief Enable New Years effect - gold, silver, and colorful celebration
+ */
+void newYears() {
+  clearAllEffects();
+  newYearsEnabled = true;
+  lastNewYearsUpdate = millis();
+  newYearsPhase = 0;
+  
+  Serial.println("[LED Strip] New Years mode enabled - happy new year!");
+}
+
+/**
+ * @brief Enable Candy Cane effect - red and white stripes
+ */
+void candyCane() {
+  clearAllEffects();
+  candyCaneEnabled = true;
+  lastCandyCaneUpdate = millis();
+  candyCanePhase = 0;
+  
+  Serial.println("[LED Strip] Candy Cane mode enabled - sweet stripes!");
+}
+
+/**
  * @brief Set blink speed
  * @param speed Blink interval in milliseconds
  */
@@ -582,6 +644,7 @@ void showHelp() {
   logMessage("Special Effects:");
   logMessage("  twinkle    - Magical twinkling effect");
   logMessage("  twinkle+   - Aggressive fast twinkling effect");
+  logMessage("  gold       - Shimmering gold twinkling effect");
   logMessage("  vegas      - Wild and crazy Las Vegas mode!");
   logMessage("  valentines - Romantic pink and red love theme");
   logMessage("  stPatricks - Irish green and gold shamrock luck");
@@ -594,6 +657,7 @@ void showHelp() {
   logMessage("  rainbow    - Smooth spectrum animations");
   logMessage("  mayThe4th  - Star Wars themed animations (May the 4th)");
   logMessage("  canadaDay  - Red and white patriotic Canadian celebration");
+  logMessage("  newYears   - Gold, silver, and colorful New Year's celebration");
   logMessage("");
   logMessage("Configuration:");
   logMessage("  setSpeed:<ms>      - Set blink speed (50-5000ms)");
@@ -714,6 +778,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     else if (message == "twinkle+") {
       pendingCommand = "twinkle+";
     }
+    else if (message == "gold") {
+      pendingCommand = "gold";
+    }
     else if (message == "vegas") {
       pendingCommand = "vegas";
     }
@@ -749,6 +816,12 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     }
     else if (message == "canadaDay") {
       pendingCommand = "canadaDay";
+    }
+    else if (message == "newYears") {
+      pendingCommand = "newYears";
+    }
+    else if (message == "candyCane") {
+      pendingCommand = "candyCane";
     }
     else if (message.startsWith("setSpeed:")) {
       // Parse speed value from "setSpeed:500" format
@@ -1015,6 +1088,7 @@ void handleRoot() {
             <div class="button-grid">
                 <button class="btn-effect" onclick="sendCommand('twinkle')">Twinkle</button>
                 <button class="btn-effect" onclick="sendCommand('twinkle+')">Twinkle+</button>
+                <button class="btn-effect" onclick="sendCommand('gold')">Gold</button>
                 <button class="btn-effect" onclick="sendCommand('vegas')">Vegas</button>
                 <button class="btn-effect" onclick="sendCommand('rainbow')">Rainbow</button>
             </div>
@@ -1026,12 +1100,14 @@ void handleRoot() {
                 <button class="btn-holiday" onclick="sendCommand('christmas')">Christmas</button>
                 <button class="btn-holiday" onclick="sendCommand('christmasBasic')">Christmas Basic</button>
                 <button class="btn-holiday" onclick="sendCommand('christmasTrain')">Christmas Train</button>
+                <button class="btn-holiday" onclick="sendCommand('candyCane')">Candy Cane</button>
                 <button class="btn-holiday" onclick="sendCommand('wildChristmas')">Wild Christmas</button>
                 <button class="btn-holiday" onclick="sendCommand('halloween')">Halloween</button>
                 <button class="btn-holiday" onclick="sendCommand('valentines')">Valentines</button>
                 <button class="btn-holiday" onclick="sendCommand('stPatricks')">St. Patrick's</button>
                 <button class="btn-holiday" onclick="sendCommand('birthday')">Birthday</button>
                 <button class="btn-holiday" onclick="sendCommand('canadaDay')">Canada Day</button>
+                <button class="btn-holiday" onclick="sendCommand('newYears')">New Years</button>
                 <button class="btn-holiday" onclick="sendCommand('mayThe4th')">May The 4th</button>
             </div>
         </div>
@@ -1405,6 +1481,9 @@ void loop() {
     else if (pendingCommand == "twinkle+") {
       twinklePlus();
     }
+    else if (pendingCommand == "gold") {
+      gold();
+    }
     else if (pendingCommand == "vegas") {
       vegas();
     }
@@ -1440,6 +1519,12 @@ void loop() {
     }
     else if (pendingCommand == "canadaDay") {
       canadaDay();
+    }
+    else if (pendingCommand == "newYears") {
+      newYears();
+    }
+    else if (pendingCommand == "candyCane") {
+      candyCane();
     }
     else if (pendingCommand == "setSpeed") {
       setSpeed(pendingCommandParam);
@@ -1562,27 +1647,66 @@ void loop() {
         int action = random8(100);
         
         if (action < 30) {
-          // 30% chance: Light up with bright white/golden color (increased from 15%)
+          // 30% chance: Light up with bright cool white sparkle
           int brightness = random8(150, 255);  // Brighter minimum
-          leds[ledIndex] = CRGB(brightness, brightness * 0.8, brightness * 0.3); // Warm golden
+          leds[ledIndex] = CRGB(brightness, brightness, brightness); // Pure white sparkle
         }
         else if (action < 55) {
-          // 25% chance: Dim the LED dramatically (increased from 15%)
+          // 25% chance: Dim the LED dramatically
           leds[ledIndex].fadeToBlackBy(100);  // More dramatic fade
         }
         else if (action < 70) {
-          // 15% chance: Turn off completely (increased from 10%)
+          // 15% chance: Turn off completely
           leds[ledIndex] = CRGB::Black;
         }
         else if (action < 85) {
-          // 15% chance: Flash to maximum brightness (NEW!)
-          leds[ledIndex] = CRGB(255, 200, 80);  // Bright golden flash
+          // 15% chance: Flash to maximum brightness with slight blue tint
+          leds[ledIndex] = CRGB(240, 245, 255);  // Bright cool white flash
         }
-        // Only 15% chance: Do nothing (decreased from 60% for more activity)
+        // Only 15% chance: Do nothing (for more activity)
       }
       
       // More aggressive fade for faster transitions
       fadeToBlackBy(leds, NUM_LEDS, 15);  // Increased from 8 for faster changes
+      
+      FastLED.show();
+    }
+  }
+  
+  // Handle gold effect - Shimmering gold twinkling
+  if (goldEnabled) {
+    unsigned long now = millis();
+    if (now - lastGoldUpdate >= GOLD_UPDATE_INTERVAL) {
+      lastGoldUpdate = now;
+      
+      // Update many random LEDs each cycle for twinkling gold effect
+      for (int i = 0; i < GOLD_LEDS_PER_UPDATE; i++) {
+        int ledIndex = random16(NUM_LEDS);
+        
+        // Random decision: brighten, dim, or maintain
+        int action = random8(100);
+        
+        if (action < 35) {
+          // 35% chance: Brighten to full gold
+          leds[ledIndex] = CRGB(255, 180, 0);  // Bright gold
+        }
+        else if (action < 60) {
+          // 25% chance: Medium gold
+          leds[ledIndex] = CRGB(200, 140, 0);  // Medium gold
+        }
+        else if (action < 75) {
+          // 15% chance: Dim gold
+          leds[ledIndex] = CRGB(150, 100, 0);  // Dim gold
+        }
+        else if (action < 85) {
+          // 10% chance: Very bright shimmer
+          leds[ledIndex] = CRGB(255, 215, 40);  // Bright shimmering gold
+        }
+        // 15% chance: Do nothing - maintain current state
+      }
+      
+      // Gentle fade to keep the gold color present
+      fadeToBlackBy(leds, NUM_LEDS, 8);  // Gentle fade
       
       FastLED.show();
     }
@@ -1651,76 +1775,14 @@ void loop() {
     if (now - lastValentinesUpdate >= VALENTINES_UPDATE_INTERVAL) {
       lastValentinesUpdate = now;
       
-      valentinesPhase++;
-      
-      // Choose romantic pattern based on phase
-      int pattern = (valentinesPhase / 50) % 4;  // Slower pattern changes
-      
-      switch(pattern) {
-        case 0:
-          // Gentle pulsing hearts - alternating pink and red
-          {
-            uint8_t brightness = beatsin8(30, 50, 255);  // Slow breathing effect
-            for (int i = 0; i < NUM_LEDS; i++) {
-              if (i % 2 == 0) {
-                leds[i] = CRGB(brightness, 0, brightness / 3);  // Pink
-              } else {
-                leds[i] = CRGB(brightness, 0, 0);  // Red
-              }
-            }
-          }
-          break;
-          
-        case 1:
-          // Romantic sparkles in pink/red/white
-          fadeToBlackBy(leds, NUM_LEDS, 20);
-          for (int i = 0; i < 10; i++) {
-            int ledIndex = random16(NUM_LEDS);
-            int colorChoice = random8(3);
-            if (colorChoice == 0) {
-              leds[ledIndex] = CRGB(255, 20, 100);  // Hot pink
-            } else if (colorChoice == 1) {
-              leds[ledIndex] = CRGB(200, 0, 30);    // Deep red
-            } else {
-              leds[ledIndex] = CRGB(255, 200, 200); // Soft white-pink
-            }
-          }
-          break;
-          
-        case 2:
-          // Flowing gradient - pink to red wave
-          {
-            for (int i = 0; i < NUM_LEDS; i++) {
-              uint8_t pos = (valentinesPhase + i * 2) % 256;
-              if (pos < 128) {
-                // Pink gradient
-                leds[i] = CRGB(255, pos / 4, 100 - (pos / 2));
-              } else {
-                // Red gradient
-                pos = pos - 128;
-                leds[i] = CRGB(255 - pos, 0, 0);
-              }
-            }
-          }
-          break;
-          
-        case 3:
-          // Twinkling love - gentle random pink/red twinkles
-          {
-            // Slow fade
-            fadeToBlackBy(leds, NUM_LEDS, 5);
-            
-            // Random romantic twinkles
-            for (int i = 0; i < 8; i++) {
-              int ledIndex = random16(NUM_LEDS);
-              if (random8(2) == 0) {
-                leds[ledIndex] = CRGB(255, 50, 150);  // Vibrant pink
-              } else {
-                leds[ledIndex] = CRGB(180, 0, 0);     // Romantic red
-              }
-            }
-          }
-          break;
+      // Gentle pulsing hearts - alternating pink and red
+      uint8_t brightness = beatsin8(30, 50, 255);  // Slow breathing effect
+      for (int i = 0; i < NUM_LEDS; i++) {
+        if (i % 2 == 0) {
+          leds[i] = CRGB(brightness, 0, brightness / 3);  // Pink
+        } else {
+          leds[i] = CRGB(brightness, 0, 0);  // Red
+        }
       }
       
       FastLED.show();
@@ -1908,83 +1970,18 @@ void loop() {
       
       christmasPhase++;
       
-      // Choose festive pattern based on phase
-      int pattern = (christmasPhase / 70) % 4;  // Pattern changes every ~2.8 seconds
-      
-      switch(pattern) {
-        case 0:
-          // Classic red and green waves
-          {
-            for (int i = 0; i < NUM_LEDS; i++) {
-              uint8_t pos = (christmasPhase * 2 + i * 3) % 256;
-              if (pos < 128) {
-                // Festive red
-                uint8_t brightness = 150 + pos;
-                leds[i] = CRGB(brightness, 0, 0);
-              } else {
-                // Christmas green
-                uint8_t brightness = 150 + (255 - pos);
-                leds[i] = CRGB(0, brightness, 0);
-              }
-            }
-          }
-          break;
-          
-        case 1:
-          // Twinkling white snowfall
-          {
-            fadeToBlackBy(leds, NUM_LEDS, 20);
-            
-            // Twinkling white lights like falling snow
-            for (int i = 0; i < 20; i++) {
-              int ledIndex = random16(NUM_LEDS);
-              if (random8() > 200) {
-                leds[ledIndex] = CRGB(255, 255, 255);  // Pure white twinkle
-              }
-            }
-          }
-          break;
-          
-        case 2:
-          // Candy cane stripes - red and white
-          {
-            for (int i = 0; i < NUM_LEDS; i++) {
-              uint8_t pos = (christmasPhase + i * 10) % 80;
-              if (pos < 40) {
-                // Bright red stripe
-                leds[i] = CRGB(255, 0, 0);
-              } else {
-                // Pure white stripe
-                leds[i] = CRGB(255, 255, 255);
-              }
-            }
-          }
-          break;
-          
-        case 3:
-          // Golden star shimmer with green accents
-          {
-            // Deep green base
-            for (int i = 0; i < NUM_LEDS; i++) {
-              leds[i] = CRGB(0, 100, 0);
-            }
-            
-            // Golden stars shimmering
-            uint8_t baseBrightness = beatsin8(15, 100, 255);
-            for (int i = 0; i < NUM_LEDS; i += 15) {
-              int starCenter = (i + christmasPhase / 3) % NUM_LEDS;
-              
-              // Create star with shimmer
-              for (int j = -2; j <= 2; j++) {
-                int ledIndex = starCenter + j;
-                if (ledIndex >= 0 && ledIndex < NUM_LEDS) {
-                  uint8_t brightness = baseBrightness - (abs(j) * 40);
-                  leds[ledIndex] = CRGB(brightness, brightness * 0.7, 0);  // Golden
-                }
-              }
-            }
-          }
-          break;
+      // Classic red and green waves
+      for (int i = 0; i < NUM_LEDS; i++) {
+        uint8_t pos = (christmasPhase * 2 + i * 3) % 256;
+        if (pos < 128) {
+          // Festive red
+          uint8_t brightness = 150 + pos;
+          leds[i] = CRGB(brightness, 0, 0);
+        } else {
+          // Christmas green
+          uint8_t brightness = 150 + (255 - pos);
+          leds[i] = CRGB(0, brightness, 0);
+        }
       }
       
       FastLED.show();
@@ -1999,92 +1996,14 @@ void loop() {
       
       birthdayPhase++;
       
-      // Choose party pattern based on phase
-      int pattern = (birthdayPhase / 75) % 4;  // Pattern changes every ~2.6 seconds
+      // Confetti burst - random colorful sparkles
+      fadeToBlackBy(leds, NUM_LEDS, 25);
       
-      switch(pattern) {
-        case 0:
-          // Confetti burst - random colorful sparkles
-          {
-            fadeToBlackBy(leds, NUM_LEDS, 25);
-            
-            // Burst of colorful confetti
-            for (int i = 0; i < 25; i++) {
-              int ledIndex = random16(NUM_LEDS);
-              uint8_t hue = random8();  // Random rainbow colors
-              leds[ledIndex] = CHSV(hue, 255, 255);
-            }
-          }
-          break;
-          
-        case 1:
-          // Rainbow waves - smooth flowing rainbow
-          {
-            for (int i = 0; i < NUM_LEDS; i++) {
-              uint8_t hue = (birthdayPhase * 3 + i * 2) % 256;
-              leds[i] = CHSV(hue, 255, 200);
-            }
-          }
-          break;
-          
-        case 2:
-          // Flickering birthday candles - warm glow
-          {
-            // Warm background
-            for (int i = 0; i < NUM_LEDS; i++) {
-              leds[i] = CRGB(30, 15, 5);  // Warm dim background
-            }
-            
-            // Candles flickering at intervals
-            for (int i = 0; i < NUM_LEDS; i += 30) {
-              int candlePos = (i + birthdayPhase / 2) % NUM_LEDS;
-              
-              // Candle flame with flicker
-              uint8_t flicker = random8(30);
-              uint8_t brightness = 200 + random8(55);
-              
-              for (int j = -3; j <= 3; j++) {
-                int ledIndex = candlePos + j;
-                if (ledIndex >= 0 && ledIndex < NUM_LEDS) {
-                  if (abs(j) == 0) {
-                    // Flame center - bright yellow/white
-                    leds[ledIndex] = CRGB(brightness, brightness - 20, brightness / 3 - flicker);
-                  } else {
-                    // Flame edges - orange
-                    uint8_t edge = brightness - (abs(j) * 40);
-                    leds[ledIndex] = CRGB(edge, edge / 2, 0);
-                  }
-                }
-              }
-            }
-          }
-          break;
-          
-        case 3:
-          // Party lights dance - alternating bright colors
-          {
-            uint8_t beat = beatsin8(30, 0, 255);
-            
-            for (int i = 0; i < NUM_LEDS; i++) {
-              // Cycle through party colors
-              int colorPhase = (birthdayPhase + i * 5) % 120;
-              
-              if (colorPhase < 30) {
-                // Hot pink
-                leds[i] = CRGB(beat, 0, beat / 2);
-              } else if (colorPhase < 60) {
-                // Electric blue
-                leds[i] = CRGB(0, beat / 2, beat);
-              } else if (colorPhase < 90) {
-                // Lime green
-                leds[i] = CRGB(beat / 3, beat, 0);
-              } else {
-                // Golden yellow
-                leds[i] = CRGB(beat, beat * 0.8, 0);
-              }
-            }
-          }
-          break;
+      // Burst of colorful confetti
+      for (int i = 0; i < 25; i++) {
+        int ledIndex = random16(NUM_LEDS);
+        uint8_t hue = random8();  // Random rainbow colors
+        leds[ledIndex] = CHSV(hue, 255, 255);
       }
       
       FastLED.show();
@@ -2588,6 +2507,144 @@ void loop() {
             }
           }
           break;
+      }
+      
+      FastLED.show();
+    }
+  }
+  
+  // Handle New Years effect - Gold, silver, and colorful celebration
+  if (newYearsEnabled) {
+    unsigned long now = millis();
+    if (now - lastNewYearsUpdate >= NEWYEARS_UPDATE_INTERVAL) {
+      lastNewYearsUpdate = now;
+      
+      newYearsPhase++;
+      
+      // Choose celebration pattern based on phase
+      int pattern = (newYearsPhase / 75) % 4;  // Pattern changes every ~2.6 seconds
+      
+      switch(pattern) {
+        case 0:
+          // Champagne bubbles - rising gold and silver sparkles
+          {
+            fadeToBlackBy(leds, NUM_LEDS, 20);
+            
+            // Rising bubbles effect
+            for (int i = 0; i < 30; i++) {
+              int ledIndex = random16(NUM_LEDS);
+              bool isGold = random8() > 127;
+              
+              if (isGold) {
+                leds[ledIndex] = CRGB(255, 200, 0);      // Gold bubble
+              } else {
+                leds[ledIndex] = CRGB(220, 220, 255);    // Silver/white bubble
+              }
+            }
+          }
+          break;
+          
+        case 1:
+          // Countdown sparkle - alternating gold and silver waves
+          {
+            for (int i = 0; i < NUM_LEDS; i++) {
+              uint8_t pos = (newYearsPhase * 3 + i * 2) % 256;
+              if (pos < 128) {
+                // Gold wave
+                uint8_t brightness = 150 + pos;
+                leds[i] = CRGB(brightness, brightness * 0.7, 0);
+              } else {
+                // Silver wave
+                uint8_t brightness = 150 + (255 - pos);
+                leds[i] = CRGB(brightness * 0.8, brightness * 0.8, brightness);
+              }
+            }
+          }
+          break;
+          
+        case 2:
+          // Fireworks burst - colorful explosions
+          {
+            fadeToBlackBy(leds, NUM_LEDS, 15);
+            
+            // Create firework bursts
+            if (newYearsPhase % 12 == 0) {
+              int burstCenter = random16(NUM_LEDS);
+              uint8_t hue = random8();  // Random color
+              
+              // Burst pattern
+              for (int i = -25; i <= 25; i++) {
+                int pos = burstCenter + i;
+                if (pos >= 0 && pos < NUM_LEDS) {
+                  uint8_t brightness = 255 - (abs(i) * 8);
+                  leds[pos] = CHSV(hue, 255, brightness);
+                }
+              }
+            }
+            
+            // Add sparkles
+            for (int i = 0; i < 20; i++) {
+              int ledIndex = random16(NUM_LEDS);
+              uint8_t sparkleHue = random8();
+              leds[ledIndex] = CHSV(sparkleHue, 255, 255);
+            }
+          }
+          break;
+          
+        case 3:
+          // Confetti celebration - rapid multicolor bursts
+          {
+            fadeToBlackBy(leds, NUM_LEDS, 30);
+            
+            // Intense confetti burst
+            for (int i = 0; i < 35; i++) {
+              int ledIndex = random16(NUM_LEDS);
+              uint8_t colorChoice = random8(5);
+              
+              switch(colorChoice) {
+                case 0:
+                  leds[ledIndex] = CRGB(255, 200, 0);    // Gold
+                  break;
+                case 1:
+                  leds[ledIndex] = CRGB(220, 220, 255);  // Silver
+                  break;
+                case 2:
+                  leds[ledIndex] = CRGB(255, 0, 100);    // Pink
+                  break;
+                case 3:
+                  leds[ledIndex] = CRGB(0, 200, 255);    // Cyan
+                  break;
+                case 4:
+                  leds[ledIndex] = CRGB(150, 0, 255);    // Purple
+                  break;
+              }
+            }
+          }
+          break;
+      }
+      
+      FastLED.show();
+    }
+  }
+  
+  // Handle Candy Cane effect - Red and white stripes
+  if (candyCaneEnabled) {
+    unsigned long now = millis();
+    if (now - lastCandyCaneUpdate >= CANDYCANE_UPDATE_INTERVAL) {
+      lastCandyCaneUpdate = now;
+      
+      candyCanePhase++;
+      
+      // Candy cane stripes - red and white
+      for (int i = 0; i < NUM_LEDS; i++) {
+        uint8_t pos = (candyCanePhase + i * 10) % 80;
+        if (pos < 40) {
+          // Bright red stripe
+          leds[i] = CRGB(255, 0, 0);
+        } else {
+          // Pure white stripe
+          leds[i] = CRGB(255, 255, 255);
+        }
       }
       
       FastLED.show();
