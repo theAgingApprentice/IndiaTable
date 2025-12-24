@@ -28,7 +28,7 @@
 CRGB leds[NUM_LEDS];
 
 // Firmware version
-#define FIRMWARE_VERSION "8.0.4"
+#define FIRMWARE_VERSION "8.0.5"
 
 // MQTT topics
 #define TOPIC_CMD "christmasTree-cmd"
@@ -148,6 +148,11 @@ unsigned long lastCandyCaneUpdate = 0;
 const int CANDYCANE_UPDATE_INTERVAL = 40;   // Stripe animation timing
 uint8_t candyCanePhase = 0;                 // Animation phase tracker
 
+// Serene effect control
+bool sereneEnabled = false;
+unsigned long lastSereneUpdate = 0;
+const int SERENE_UPDATE_INTERVAL = 40;      // ~25 FPS smooth animation
+
 // Command queue to avoid watchdog issues in MQTT callback
 String pendingCommand = "";
 unsigned long pendingCommandParam = 0;
@@ -220,6 +225,7 @@ void clearAllEffects() {
   canadaDayEnabled = false;
   newYearsEnabled = false;
   candyCaneEnabled = false;
+  sereneEnabled = false;
   
   // Clear the LED strip to prevent artifacts
   FastLED.clear();
@@ -609,6 +615,21 @@ void candyCane() {
 }
 
 /**
+ * @brief Enable serene sparkle effect - gentle Christmas palette sparkles
+ */
+void serene() {
+  clearAllEffects();
+  sereneEnabled = true;
+  lastSereneUpdate = millis();
+  
+  // Start with all LEDs off for clean sparkle effect
+  FastLED.clear();
+  FastLED.show();
+  
+  Serial.println("[LED Strip] Serene effect enabled - peaceful sparkles!");
+}
+
+/**
  * @brief Set blink speed
  * @param speed Blink interval in milliseconds
  */
@@ -658,6 +679,8 @@ void showHelp() {
   logMessage("  mayThe4th  - Star Wars themed animations (May the 4th)");
   logMessage("  canadaDay  - Red and white patriotic Canadian celebration");
   logMessage("  newYears   - Gold, silver, and colorful New Year's celebration");
+  logMessage("  candyCane  - Red and white candy cane stripes");
+  logMessage("  serene     - Peaceful Christmas sparkles with gentle fading");
   logMessage("");
   logMessage("Configuration:");
   logMessage("  setSpeed:<ms>      - Set blink speed (50-5000ms)");
@@ -822,6 +845,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     }
     else if (message == "candyCane") {
       pendingCommand = "candyCane";
+    }
+    else if (message == "serene") {
+      pendingCommand = "serene";
     }
     else if (message.startsWith("setSpeed:")) {
       // Parse speed value from "setSpeed:500" format
@@ -1101,6 +1127,7 @@ void handleRoot() {
                 <button class="btn-holiday" onclick="sendCommand('christmasBasic')">Christmas Basic</button>
                 <button class="btn-holiday" onclick="sendCommand('christmasTrain')">Christmas Train</button>
                 <button class="btn-holiday" onclick="sendCommand('candyCane')">Candy Cane</button>
+                <button class="btn-holiday" onclick="sendCommand('serene')">Serene</button>
                 <button class="btn-holiday" onclick="sendCommand('wildChristmas')">Wild Christmas</button>
                 <button class="btn-holiday" onclick="sendCommand('halloween')">Halloween</button>
                 <button class="btn-holiday" onclick="sendCommand('valentines')">Valentines</button>
@@ -1525,6 +1552,9 @@ void loop() {
     }
     else if (pendingCommand == "candyCane") {
       candyCane();
+    }
+    else if (pendingCommand == "serene") {
+      serene();
     }
     else if (pendingCommand == "setSpeed") {
       setSpeed(pendingCommandParam);
@@ -2645,6 +2675,44 @@ void loop() {
           // Pure white stripe
           leds[i] = CRGB(255, 255, 255);
         }
+      }
+      
+      FastLED.show();
+    }
+  }
+  
+  // Handle Serene effect - Gentle Christmas palette sparkles
+  if (sereneEnabled) {
+    unsigned long now = millis();
+    if (now - lastSereneUpdate >= SERENE_UPDATE_INTERVAL) {
+      lastSereneUpdate = now;
+      
+      // Gentle global fade - keep a soft tail
+      for (int i = 0; i < NUM_LEDS; i++) {
+        leds[i].nscale8(230);
+      }
+      
+      // Christmas palette seeds: warm white, soft red, soft green, gold
+      const CRGB palette[] = {
+        CRGB(255, 240, 200), // warm white
+        CRGB(200, 30, 30),   // soft red
+        CRGB(20, 160, 40),   // soft green
+        CRGB(230, 180, 40)   // gold
+      };
+      
+      // Seed a few random pixels
+      uint8_t seeds = 3 + random8(3); // 3-5 sparks per frame
+      for (uint8_t s = 0; s < seeds; s++) {
+        int idx = random16(NUM_LEDS);
+        CRGB base = palette[random8(sizeof(palette) / sizeof(palette[0]))];
+        uint8_t boost = 140 + random8(115); // brightness 140-255
+        CRGB c = base;
+        c.nscale8(boost);
+        // slight color variation
+        c.r = qadd8(c.r, random8(10));
+        c.g = qadd8(c.g, random8(10));
+        c.b = qadd8(c.b, random8(10));
+        leds[idx] = c;
       }
       
       FastLED.show();
