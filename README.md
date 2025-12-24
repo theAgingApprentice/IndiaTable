@@ -1,6 +1,6 @@
-# Christmas Tree LED Controller
+# India Table LED Controller
 
-Addressable WS2812B LED strip controller with 900 LEDs, WiFi connectivity, MQTT control, and Over-The-Air (OTA) firmware updates. Features multiple holiday-themed animations and solid color displays controlled via MQTT commands.
+Addressable WS2812B LED strip controller with 300 LEDs, WiFi connectivity, MQTT control, and Over-The-Air (OTA) firmware updates. Features multiple holiday-themed animations and solid color displays controlled via MQTT commands.
 
 ## Table of Contents
 
@@ -57,7 +57,7 @@ Addressable WS2812B LED strip controller with 900 LEDs, WiFi connectivity, MQTT 
 - **Flash**: 4MB
 - **RAM**: 320KB
 - **Built-in LED**: GPIO2
-- **LED Strip**: WS2812B (900 LEDs) connected to GPIO 33
+- **LED Strip**: WS2812B (300 LEDs) connected to GPIO 33
 - **Power Supply**: 5V 4A (with current limiting to 3.5A for safety)
 
 ## Features
@@ -99,7 +99,7 @@ Visual feedback of system state:
 - **SOLID ON**: WiFi + MQTT both connected
 
 ### � LED Control System
-- **WS2812B LED Strip**: 900 addressable RGB LEDs on GPIO 33
+- **WS2812B LED Strip**: 300 addressable RGB LEDs on GPIO 33
 - **FastLED Library**: High-performance LED control with FastLED 3.7.0
 - **Power Management**: Maximum brightness limited to 80/255 with 3.5A current limiting
 - **Command Queue System**: Prevents watchdog timeouts during long animations
@@ -186,8 +186,8 @@ Key settings:
 
 #### Required Hardware
 1. **ESP32-WROOM-32 Development Board**
-2. **WS2812B LED Strip** (900 LEDs or adjust NUM_LEDS in code)
-3. **5V Power Supply** (4A minimum for 900 LEDs)
+2. **WS2812B LED Strip** (300 LEDs or adjust NUM_LEDS in code)
+3. **5V Power Supply** (4A minimum for 300 LEDs)
 4. **USB Cable** (for initial programming)
 
 #### MQTT Broker
@@ -453,7 +453,7 @@ The device uses three MQTT topics:
 1. **Status Messages**
    - **Topic**: `christmasTree-msg`
    - **Purpose**: Device status and connection messages
-   - **Example**: `ESP32-ChristmasTree-14:08:08:AB:51:4C: Christmas Tree Device Connected - MAC: 14:08:08:AB:51:4C`
+   - **Example**: `ESP32-ChristmasTree-14:08:08:AB:51:4C: India Table Device Connected - MAC: 14:08:08:AB:51:4C`
 
 2. **Log Messages**
    - **Topic**: `christmasTree-log`
@@ -474,7 +474,7 @@ This allows multiple devices on the same MQTT broker without conflicts.
 #### Using MQTT Explorer
 1. Launch MQTT Explorer
 2. Create new connection:
-   - Name: `Christmas Tree`
+   - Name: `India Table`
    - Host: Your MQTT broker IP (e.g., `192.168.2.21`)
    - Port: `1883`
 3. Connect
@@ -499,7 +499,7 @@ mosquitto_pub -h 192.168.2.21 -t "christmasTree-cmd" -m "setSpeed:1000"
 
 ## How to Use
 
-The Christmas Tree LED Controller can be controlled in two ways:
+The India Table LED Controller can be controlled in two ways:
 1. **Web Interface** - Direct browser control (easiest, no additional software needed)
 2. **MQTT Commands** - For automation and integration with home automation systems
 
@@ -527,7 +527,7 @@ The web interface provides an intuitive, mobile-friendly control panel with orga
 
 2. **Solid Colors Section**
    - Four color buttons: Red, Green, White, Blue
-   - One-click to set all 900 LEDs to selected color
+   - One-click to set all 300 LEDs to selected color
    - Color-coded buttons for easy identification
 
 3. **Blinking Colors Section**
@@ -583,10 +583,10 @@ Send commands via MQTT to the `christmasTree-cmd` topic.
 - `help` - Display all available commands in MQTT log topic
 
 #### Solid Colors
-- `allRed` - Set all 900 LEDs to solid red
-- `allGreen` - Set all 900 LEDs to solid green  
-- `allWhite` - Set all 900 LEDs to solid white
-- `allBlue` - Set all 900 LEDs to solid blue
+- `allRed` - Set all 300 LEDs to solid red
+- `allGreen` - Set all 300 LEDs to solid green  
+- `allWhite` - Set all 300 LEDs to solid white
+- `allBlue` - Set all 300 LEDs to solid blue
 
 #### Blinking Colors
 - `allRedBlink` - Blink all LEDs red
@@ -757,7 +757,7 @@ christmas_tree_rainbow:
     "type": "mqtt out",
     "topic": "christmasTree-cmd",
     "broker": "mqtt-broker",
-    "name": "Christmas Tree Control"
+    "name": "India Table Control"
   }
 ]
 ```
@@ -779,7 +779,7 @@ christmas_tree_rainbow:
 ### Publish (Send Messages)
 - **Topic**: `christmasTree-msg`
 - **Purpose**: Device status and connection messages
-- **Example**: `ESP32-ChristmasTree-14:08:08:AB:51:4C: Christmas Tree Device Connected - MAC: 14:08:08:AB:51:4C`
+- **Example**: `ESP32-ChristmasTree-14:08:08:AB:51:4C: India Table Device Connected - MAC: 14:08:08:AB:51:4C`
 
 ### Publish (Send Logs)
 - **Topic**: `christmasTree-log`
@@ -843,9 +843,9 @@ Update this value when releasing new versions. The version is displayed:
 - Verify broker allows anonymous connections or configure authentication
 
 ### LED Strip Issues
-- Verify NUM_LEDS matches your actual LED count (default: 900)
+- Verify NUM_LEDS matches your actual LED count (default: 300)
 - Check GPIO pin connection (should be GPIO 33)
-- Ensure adequate power supply (5V 4A minimum for 900 LEDs)
+- Ensure adequate power supply (5V 4A minimum for 300 LEDs)
 - Verify LED strip is WS2812B with GRB color order
 - Check FastLED initialization in code matches your hardware
 - Test with `showStatus` command first (uses only 2 LEDs)
@@ -972,7 +972,7 @@ mosquitto_pub -h 192.168.2.21 -t "christmasTree-cmd" -m "showStatus"
 
 ### Power Consumption
 - **Maximum per LED**: 60mA at full white (WS2812B spec)
-- **Theoretical maximum (900 LEDs)**: 54A at full white
+- **Theoretical maximum (300 LEDs)**: 18A at full white
 - **Actual maximum (with limiting)**: 3.5A
 - **Brightness limiting**: MAX_BRIGHTNESS = 80 (31% of full)
 - **FastLED current limit**: 3500mA at 5V
@@ -988,7 +988,7 @@ mosquitto_pub -h 192.168.2.21 -t "christmasTree-cmd" -m "showStatus"
 - **Web server**: Always active when WiFi connected
 
 ### Memory Usage
-- **LED buffer**: 900 LEDs × 3 bytes = 2,700 bytes
+- **LED buffer**: 300 LEDs × 3 bytes = 900 bytes
 - **Web server**: ~2KB RAM overhead
 - **HTML interface**: 8KB Flash storage (program memory)
 - **ESP32 RAM**: 320KB total
