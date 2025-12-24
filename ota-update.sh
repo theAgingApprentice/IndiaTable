@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###############################################################################
-# OTA Update Script for ESP32 Christmas Tree Project
+# OTA Update Script for ESP32 India Table Project
 # 
 # Usage: ./ota-update.sh <IP_ADDRESS>
 # Example: ./ota-update.sh 192.168.2.100
@@ -61,7 +61,7 @@ fi
 
 # Display update information
 echo -e "${GREEN}╔════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║  ESP32 Christmas Tree OTA Update          ║${NC}"
+echo -e "${GREEN}║  ESP32 India Table OTA Update             ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${YELLOW}Target IP:${NC} $IP_ADDRESS"

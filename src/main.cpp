@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
- * @brief Christmas Tree Project - ESP32 WROOM32 v1.3 (Freenove)
- * @date December 15, 2025
+ * @brief India Table Project - ESP32 WROOM32 v1.3 (Freenove)
+ * @date December 23, 2025
  */
 
 #include <Arduino.h>
@@ -11,13 +11,14 @@
 #include <FastLED.h>
 #include <WebServer.h>
 #include "secrets.h"
+#include "favicon.h"
 
 // Built-in LED pin (usually GPIO2 on ESP32 dev boards)
 #define LED_BUILTIN 2
 
 // WS2812B LED Strip Configuration
 #define LED_PIN 33
-#define NUM_LEDS 900
+#define NUM_LEDS 300
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 
@@ -907,7 +908,7 @@ bool connectToMQTT() {
     }
     
     // Publish connection message
-    String connectMsg = mqttClientId + ": [MQTT] Christmas Tree Device Connected - MAC: " + WiFi.macAddress();
+    String connectMsg = mqttClientId + ": [MQTT] India Table Device Connected - MAC: " + WiFi.macAddress();
     logMessageF("[MQTT] Publishing to topic: %s", TOPIC_MSG);
     if (mqttClient.publish(TOPIC_MSG, connectMsg.c_str())) {
       logMessage("[MQTT] ✓ Connection message published!");
@@ -936,7 +937,7 @@ void handleRoot() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Christmas Tree LED Controller</title>
+    <title>India Table LED Controller</title>
     <style>
         * {
             margin: 0;
@@ -1058,8 +1059,8 @@ void handleRoot() {
 </head>
 <body>
     <div class="container">
-        <h1>🎄 Christmas Tree LED Controller</h1>
-        <div class="subtitle">ESP32 with 900 WS2812B LEDs · Firmware v)rawliteral";
+        <h1>�🇳 India Table LED Controller</h1>
+        <div class="subtitle">ESP32 with 300 WS2812B LEDs · Firmware v)rawliteral";
   
   html += FIRMWARE_VERSION;
   
@@ -1217,6 +1218,9 @@ void setupWebServer() {
   // Route handlers
   webServer.on("/", handleRoot);
   webServer.on("/cmd", handleCommand);
+  webServer.on("/favicon.ico", []() {
+    webServer.send_P(200, "image/x-icon", (const char*)favicon_ico, favicon_ico_len);
+  });
   
   // Start server
   webServer.begin();
@@ -1398,7 +1402,7 @@ void setup() {
   delay(1000);
   
   Serial.println("\n=================================");
-  Serial.println("Christmas Tree Project");
+  Serial.println("India Table Project");
   Serial.println("ESP32-WROOM-32 v1.3 (Freenove)");
   Serial.println("=================================\n");
   
