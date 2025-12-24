@@ -612,6 +612,11 @@ Send commands via MQTT to the `christmasTree-cmd` topic.
   - Flowing gradient pattern of festive red and green
 - `candyCane` - Red and white striped pattern
   - Animated candy cane stripes rotating around the tree
+- `serene` - Peaceful Christmas sparkles with gentle fading
+  - Soft sparkles in Christmas palette (warm white, soft red, soft green, gold)
+  - Gentle fade with soft trails (~25 FPS smooth animation)
+  - 3-5 random sparkles per frame with slight color variation
+  - Creates a calm, serene holiday atmosphere
 - `christmasBasic` - Classic red, green, white alternating pattern with gentle twinkling
   - Simple alternating color pattern (R-G-W repeating)
   - Random subtle twinkle effects
@@ -706,6 +711,9 @@ mosquitto_pub -h 192.168.2.21 -t "christmasTree-cmd" -m "showStatus"
 ```bash
 # Start Christmas effect
 mosquitto_pub -h 192.168.2.21 -t "christmasTree-cmd" -m "christmas"
+
+# Peaceful serene sparkles
+mosquitto_pub -h 192.168.2.21 -t "christmasTree-cmd" -m "serene"
 
 # Switch to rainbow effect
 mosquitto_pub -h 192.168.2.21 -t "christmasTree-cmd" -m "rainbow"
@@ -933,6 +941,7 @@ http://192.168.2.159  (replace with your device's IP)
 | `allRedBlink` | Blinking red |
 | `setSpeed:1000` | Set blink to 1 second |
 | `christmas` | Christmas theme |
+| `serene` | Peaceful sparkles |
 | `rainbow` | Rainbow effect |
 | `twinkle` | Twinkling lights |
 
