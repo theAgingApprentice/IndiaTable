@@ -29,7 +29,7 @@
 CRGB leds[NUM_LEDS];
 
 // Firmware version
-#define FIRMWARE_VERSION "8.0.5"
+#define FIRMWARE_VERSION "8.0.6"
 
 // MQTT topics
 #define TOPIC_CMD "christmasTree-cmd"
