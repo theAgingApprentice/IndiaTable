@@ -32,9 +32,9 @@ CRGB leds[NUM_LEDS];
 #define FIRMWARE_VERSION "8.0.6"
 
 // MQTT topics
-#define TOPIC_CMD "christmasTree-cmd"
-#define TOPIC_MSG "christmasTree-msg"
-#define TOPIC_LOG "christmasTree-log"
+#define TOPIC_CMD "IndiaTable-cmd"
+#define TOPIC_MSG "IndiaTable-msg"
+#define TOPIC_LOG "IndiaTable-log"
 
 // Timer for LED blinking
 hw_timer_t *ledTimer = NULL;
@@ -889,7 +889,7 @@ bool connectToMQTT() {
   Serial.printf("[MQTT] Broker: %s:%d\n", MQTT_BROKER, MQTT_PORT);
   
   // Generate unique client ID
-  mqttClientId = "ESP32-ChristmasTree-";
+  mqttClientId = "ESP32-IndiaTable-";
   mqttClientId += String(WiFi.macAddress());
   
   Serial.printf("[MQTT] Client ID: %s\n", mqttClientId.c_str());
@@ -917,7 +917,7 @@ bool connectToMQTT() {
     }
     
     logMessage("[MQTT] LED set to SOLID (MQTT connected)");
-    logMessage("[MQTT] Console messages now mirrored to MQTT topic: christmasTree-log");
+    logMessage("[MQTT] Console messages now mirrored to MQTT topic: IndiaTable-log");
     return true;
   } else {
     Serial.printf("[MQTT] ✗ Connection failed! State: %d\n", mqttClient.state());
@@ -1238,7 +1238,7 @@ void setupOTA() {
   logMessage("[OTA] Configuring Over-The-Air updates...");
   
   // Set OTA hostname
-  String hostname = "ChristmasTree-" + WiFi.macAddress();
+  String hostname = "IndiaTable-" + WiFi.macAddress();
   hostname.replace(":", "");
   ArduinoOTA.setHostname(hostname.c_str());
   logMessageF("[OTA] Hostname: %s", hostname.c_str());
