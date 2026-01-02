@@ -70,7 +70,7 @@ echo ""
 echo "Starting OTA update..."
 echo ""
 
-# Perform the OTA update (only build and upload the OTA environment)
+platformio run --target clean
 platformio run -e esp32dev-ota -t upload --upload-port "$IP_ADDRESS"
 
 # Check the exit status
